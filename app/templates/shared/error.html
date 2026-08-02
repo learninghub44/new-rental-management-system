@@ -1,0 +1,10 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ status_code }} — Something went wrong{% endblock %}
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+  <img src="https://img.icons8.com/ios/64/94a3b8/high-priority.png" alt="" class="mb-4" />
+  <h1 class="text-3xl font-bold text-slate-800 mb-2">{{ status_code }}</h1>
+  <p class="text-slate-500 mb-6">{{ detail }}</p>
+  <a href="/" class="rounded-xl bg-brand-600 text-white font-semibold px-6 py-3">Go Home</a>
+</div>
+{% endblock %}

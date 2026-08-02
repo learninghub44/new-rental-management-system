@@ -1,0 +1,43 @@
+{% extends "shared/base.html" %}
+{% block title %}Login — Rental Management{% endblock %}
+{% block content %}
+<div class="min-h-screen flex flex-col justify-center px-6 py-12">
+  <div class="mx-auto w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="mx-auto h-14 w-14 rounded-2xl bg-brand-600 flex items-center justify-center mb-4">
+        <img src="https://img.icons8.com/ios-filled/50/ffffff/home.png" alt="" class="h-7 w-7" />
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
+      <p class="text-slate-500 text-sm mt-1">Sign in to manage your rentals</p>
+    </div>
+
+    {% if error %}
+    <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/login" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+        <input id="email" name="email" type="email" required autocomplete="email"
+               class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" />
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password"
+               class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" />
+      </div>
+
+      <div class="text-right">
+        <a href="/forgot-password" class="text-sm text-brand-600 font-medium">Forgot password?</a>
+      </div>
+
+      <button type="submit"
+              class="w-full rounded-xl bg-brand-600 text-white font-semibold py-3.5 text-base active:bg-brand-700 transition">
+        Sign In
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

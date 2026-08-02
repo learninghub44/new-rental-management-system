@@ -1,0 +1,44 @@
+{% extends "shared/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="pb-20 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 rounded-b-3xl flex items-center justify-between">
+    <div>
+      <p class="text-slate-400 text-sm">{{ user.role.value | capitalize }}</p>
+      <h1 class="text-2xl font-bold">{{ user.name }}</h1>
+    </div>
+    <form method="post" action="/logout">
+      <button class="text-xs bg-white/10 px-3 py-2 rounded-lg">Logout</button>
+    </form>
+  </header>
+
+  <main class="px-6 -mt-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <p class="text-sm text-slate-500">Properties, tenants, billing and reports wire up in the following build phases.</p>
+    </div>
+  </main>
+
+  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around">
+    <a href="/admin/dashboard" class="flex flex-col items-center gap-1 px-3 py-1 text-brand-600">
+      <img src="https://img.icons8.com/ios-filled/24/2563eb/dashboard.png" alt="" />
+      <span class="text-[11px] font-medium">Dashboard</span>
+    </a>
+    <a href="/admin/properties" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
+      <img src="https://img.icons8.com/ios/24/94a3b8/company.png" alt="" />
+      <span class="text-[11px] font-medium">Properties</span>
+    </a>
+    <a href="/admin/tenants" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
+      <img src="https://img.icons8.com/ios/24/94a3b8/user-group-man-man.png" alt="" />
+      <span class="text-[11px] font-medium">Tenants</span>
+    </a>
+    <a href="/admin/payments" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
+      <img src="https://img.icons8.com/ios/24/94a3b8/mobile-payment.png" alt="" />
+      <span class="text-[11px] font-medium">Payments</span>
+    </a>
+    <a href="/admin/more" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
+      <img src="https://img.icons8.com/ios/24/94a3b8/menu.png" alt="" />
+      <span class="text-[11px] font-medium">More</span>
+    </a>
+  </nav>
+</div>
+{% endblock %}

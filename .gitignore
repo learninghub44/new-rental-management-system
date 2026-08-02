@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Uploads (local dev only — production uses object storage)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/

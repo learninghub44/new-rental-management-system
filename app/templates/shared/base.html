@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{% block title %}Rental Management{% endblock %}</title>
+
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <link rel="icon" href="/static/icons/icon-192.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6',
+              600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a',
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    body { -webkit-tap-highlight-color: transparent; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-slate-50 text-slate-900 antialiased">
+
+  <div id="toast-root" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[92%] max-w-sm"
+       hx-swap-oob="true"></div>
+
+  {% block content %}{% endblock %}
+
+  <script>
+    // Global HTMX toast handler: server sends HX-Trigger: {"toast": {"type": "success", "message": "..."}}
+    document.body.addEventListener('toast', function (evt) {
+      const root = document.getElementById('toast-root');
+      const data = evt.detail;
+      const colors = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-slate-800' };
+      const el = document.createElement('div');
+      el.className = `${colors[data.type] || colors.info} text-white text-sm px-4 py-3 rounded-xl shadow-lg`;
+      el.textContent = data.message;
+      root.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/service-worker.js').catch(() => {});
+      });
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
