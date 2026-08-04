@@ -1,0 +1,22 @@
+{% extends "shared/base.html" %}
+{% block title %}Tenant Created{% endblock %}
+{% block content %}
+<div class="min-h-screen flex flex-col justify-center px-6 py-12">
+  <div class="mx-auto w-full max-w-sm text-center">
+    <div class="mx-auto h-14 w-14 rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
+      <img src="https://img.icons8.com/ios-filled/28/16a34a/checkmark.png" alt="" />
+    </div>
+    <h1 class="text-xl font-bold mb-1">{{ tenant.full_name }} was added</h1>
+    <p class="text-slate-500 text-sm mb-6">Tenant portal login created</p>
+
+    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6 text-left">
+      <p class="text-xs text-slate-500 mb-1">Share these sign-in details with them:</p>
+      <p class="text-sm"><span class="text-slate-500">Email:</span> <strong>{{ tenant.email }}</strong></p>
+      <p class="text-sm"><span class="text-slate-500">Password:</span> <strong class="tracking-wider">{{ default_password }}</strong></p>
+      <p class="text-xs text-slate-400 mt-2">This is the last 6 digits of their phone number. They can change it after logging in.</p>
+    </div>
+
+    <a href="/admin/tenants/{{ tenant.id }}" class="block w-full rounded-xl bg-brand-600 text-white font-semibold py-3.5">Continue to Tenant</a>
+  </div>
+</div>
+{% endblock %}

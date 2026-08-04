@@ -15,6 +15,8 @@ from app.api.routes import auth, pages
 from app.api.routes.admin import users as admin_users
 from app.api.routes.admin import properties as admin_properties
 from app.api.routes.admin import units as admin_units
+from app.api.routes.admin import tenants as admin_tenants
+from app.api.routes.admin import leases as admin_leases
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger("rental_app")
@@ -44,6 +46,8 @@ app.include_router(auth.router)
 app.include_router(admin_users.router)
 app.include_router(admin_properties.router)
 app.include_router(admin_units.router)
+app.include_router(admin_tenants.router)
+app.include_router(admin_leases.router)
 
 
 @app.exception_handler(StarletteHTTPException)

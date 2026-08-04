@@ -1,0 +1,78 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ "Add Tenant" if mode == "create" else "Edit Tenant" }}{% endblock %}
+{% block content %}
+<div class="min-h-screen pb-16">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="{{ '/admin/tenants' if mode == 'create' else '/admin/tenants/' + target.id|string }}" class="text-slate-400 text-xs">← Back</a>
+    <h1 class="text-xl font-bold mt-1">{{ "Add Tenant" if mode == "create" else "Edit " + target.full_name }}</h1>
+  </header>
+
+  <main class="px-6 -mt-2">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      {% if error %}
+      <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{{ error }}</div>
+      {% endif %}
+
+      {% if mode == "create" %}
+      <p class="text-xs text-slate-500 mb-4 bg-slate-50 rounded-lg px-3 py-2">
+        If you give an email and leave "Create login" checked, we'll set up their tenant portal account too —
+        default password is the <strong>last 6 digits of their phone number</strong>.
+      </p>
+      {% endif %}
+
+      <form method="post" action="{{ '/admin/tenants/new' if mode == 'create' else '/admin/tenants/' + target.id|string + '/edit' }}" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+          <input name="full_name" required value="{{ target.full_name if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+          <input name="phone" required placeholder="07XXXXXXXX" value="{{ target.phone if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Email {{ "" if mode == "edit" else "(optional — needed for portal login)" }}</label>
+          <input name="email" type="email" value="{{ target.email if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">National ID</label>
+          <input name="national_id" required value="{{ target.national_id if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Emergency contact name</label>
+          <input name="emergency_contact_name" value="{{ target.emergency_contact_name if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Emergency contact phone</label>
+          <input name="emergency_contact_phone" value="{{ target.emergency_contact_phone if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+
+        {% if mode == "create" %}
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="create_login" value="true" checked class="rounded border-slate-300" />
+          Create tenant portal login (requires email)
+        </label>
+        {% else %}
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+          <select name="status" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            {% for s in statuses %}
+            <option value="{{ s.value }}" {% if target.status.value == s.value %}selected{% endif %}>{{ s.value | replace('_',' ') | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="w-full rounded-xl bg-brand-600 text-white font-semibold py-3.5">
+          {{ "Create Tenant" if mode == "create" else "Save Changes" }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}

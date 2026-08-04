@@ -1,0 +1,54 @@
+{% extends "shared/base.html" %}
+{% block title %}Tenants{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 flex items-center justify-between">
+    <div>
+      <a href="/admin/dashboard" class="text-slate-400 text-xs">← Dashboard</a>
+      <h1 class="text-xl font-bold mt-1">Tenants</h1>
+    </div>
+    <a href="/admin/tenants/new" class="bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl">+ Add</a>
+  </header>
+
+  <main class="px-4 -mt-2">
+    <form method="get" action="/admin/tenants" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4 space-y-3">
+      <input type="text" name="search" value="{{ search }}" placeholder="Search name, phone, ID..."
+             class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm" />
+      <select name="status_filter" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+        <option value="">All statuses</option>
+        {% for s in statuses %}
+        <option value="{{ s.value }}" {% if status_filter == s.value %}selected{% endif %}>{{ s.value | replace('_',' ') | capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="w-full rounded-xl bg-slate-800 text-white text-sm font-semibold py-2.5">Filter</button>
+    </form>
+
+    {% if tenants %}
+    <div class="space-y-3">
+      {% for t in tenants %}
+      <a href="/admin/tenants/{{ t.id }}" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-semibold text-slate-800">{{ t.full_name }}</p>
+            <p class="text-xs text-slate-500">{{ t.phone }}{% if t.unit_id %} · Unit assigned{% endif %}</p>
+          </div>
+          <span class="inline-block text-[11px] font-medium px-2 py-1 rounded-full
+            {% if t.status.value == 'active' %}bg-emerald-50 text-emerald-700
+            {% elif t.status.value == 'blacklisted' %}bg-red-50 text-red-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">
+            {{ t.status.value | replace('_',' ') | capitalize }}
+          </span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-4">{{ total }} tenant{{ 's' if total != 1 else '' }} found</p>
+    {% else %}
+    <div class="text-center py-16">
+      <p class="text-slate-400 text-sm">No tenants yet.</p>
+      <a href="/admin/tenants/new" class="inline-block mt-3 text-brand-600 text-sm font-medium">Add your first tenant</a>
+    </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

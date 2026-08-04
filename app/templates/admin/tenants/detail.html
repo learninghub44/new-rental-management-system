@@ -1,0 +1,121 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ tenant.full_name }}{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen" x-data="{ showLeaseForm: {{ 'true' if (error and not active_lease) else 'false' }} }">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/tenants" class="text-slate-400 text-xs">← Tenants</a>
+    <div class="flex items-center justify-between mt-1">
+      <h1 class="text-xl font-bold">{{ tenant.full_name }}</h1>
+      <a href="/admin/tenants/{{ tenant.id }}/edit" class="text-xs bg-white/10 px-3 py-2 rounded-lg">Edit</a>
+    </div>
+    <p class="text-slate-400 text-sm mt-1">{{ tenant.phone }} · {{ tenant.national_id }}</p>
+  </header>
+
+  <main class="px-4 -mt-2">
+    {% if error %}
+    <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{{ error }}</div>
+    {% endif %}
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+      <p class="text-xs text-slate-500">Balance &amp; billing history will appear here once invoicing is wired up (next build phase).</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+      <h2 class="font-semibold text-slate-800 mb-3">Current Lease</h2>
+      {% if active_lease %}
+      <p class="text-sm text-slate-700">Unit: <strong>{{ active_lease.unit.unit_number }}</strong> — {{ active_lease.unit.property.name }}</p>
+      <p class="text-sm text-slate-500">KES {{ "{:,.0f}".format(active_lease.rent_amount) }}/mo · Deposit KES {{ "{:,.0f}".format(active_lease.deposit) }}</p>
+      <p class="text-sm text-slate-500">{{ active_lease.start_date }} → {{ active_lease.end_date or "Open-ended" }}</p>
+
+      <div class="grid grid-cols-2 gap-2 mt-3">
+        <button type="button" @click="$refs.renewDialog.showModal()" class="rounded-xl bg-slate-100 text-slate-700 font-medium py-2.5 text-sm">Renew</button>
+        <form method="post" action="/admin/tenants/{{ tenant.id }}/leases/{{ active_lease.id }}/terminate"
+              onsubmit="return confirm('Terminate this lease? The unit will be freed.')">
+          <button type="submit" class="w-full rounded-xl bg-red-50 text-red-700 font-medium py-2.5 text-sm">Terminate</button>
+        </form>
+      </div>
+
+      <dialog x-ref="renewDialog" class="rounded-2xl p-0 backdrop:bg-black/40 w-[85%] max-w-sm">
+        <form method="post" action="/admin/tenants/{{ tenant.id }}/leases/{{ active_lease.id }}/renew" class="p-5 space-y-3">
+          <h3 class="font-semibold text-slate-800">Renew Lease</h3>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">New end date</label>
+            <input type="date" name="new_end_date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">New rent (optional)</label>
+            <input type="number" step="0.01" name="new_rent_amount" placeholder="{{ active_lease.rent_amount }}" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          </div>
+          <div class="flex gap-2">
+            <button type="button" @click="$refs.renewDialog.close()" class="flex-1 rounded-xl bg-slate-100 text-slate-700 font-medium py-2.5 text-sm">Cancel</button>
+            <button type="submit" class="flex-1 rounded-xl bg-brand-600 text-white font-medium py-2.5 text-sm">Renew</button>
+          </div>
+        </form>
+      </dialog>
+      {% else %}
+      <p class="text-sm text-slate-400 mb-3">No active lease.</p>
+      <button type="button" @click="showLeaseForm = !showLeaseForm" class="w-full rounded-xl bg-brand-600 text-white font-medium py-2.5 text-sm">
+        Start a Lease
+      </button>
+
+      <form x-show="showLeaseForm" x-cloak method="post" action="/admin/tenants/{{ tenant.id }}/leases" class="mt-4 space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Unit</label>
+          <select name="unit_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+            <option value="">Select a unit…</option>
+            {% for u in available_units %}
+            <option value="{{ u.id }}">{{ u.property.name }} — Unit {{ u.unit_number }} (KES {{ "{:,.0f}".format(u.monthly_rent) }}/mo)</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Start date</label>
+            <input type="date" name="start_date" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">End date (optional)</label>
+            <input type="date" name="end_date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Rent (KES)</label>
+            <input type="number" step="0.01" name="rent_amount" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Deposit (KES)</label>
+            <input type="number" step="0.01" name="deposit" value="0" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm" />
+          </div>
+        </div>
+        <button type="submit" class="w-full rounded-xl bg-brand-600 text-white font-medium py-2.5 text-sm">Create Lease</button>
+      </form>
+      {% endif %}
+    </div>
+
+    {% if leases %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+      <h2 class="font-semibold text-slate-800 mb-3">Lease History</h2>
+      <div class="space-y-2">
+        {% for l in leases %}
+        <div class="flex items-center justify-between text-sm border-b border-slate-50 last:border-0 pb-2 last:pb-0">
+          <span class="text-slate-600">{{ l.start_date }} → {{ l.end_date or "open" }}</span>
+          <span class="text-[11px] font-medium px-2 py-1 rounded-full
+            {% if l.status.value == 'active' %}bg-emerald-50 text-emerald-700
+            {% elif l.status.value == 'terminated' %}bg-red-50 text-red-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">
+            {{ l.status.value | capitalize }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tenant.status.value == 'active' %}
+    <button hx-post="/admin/tenants/{{ tenant.id }}/move-out" hx-confirm="Mark this tenant as moved out? Their unit will be freed."
+            class="w-full rounded-xl bg-slate-100 text-slate-700 font-medium py-3 text-sm">Mark Moved Out</button>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
