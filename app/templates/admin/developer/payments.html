@@ -1,0 +1,42 @@
+{% extends "shared/base.html" %}
+{% block title %}PayHero Transactions{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen" x-data="{ open: null }">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/developer" class="text-slate-400 text-xs">← Developer</a>
+    <h1 class="text-xl font-bold mt-1">PayHero Transactions</h1>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-2 mt-4">
+    {% if not transactions %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center text-sm text-slate-400">No PayHero attempts yet.</div>
+    {% endif %}
+    {% for t in transactions %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="flex items-center justify-between cursor-pointer" @click="open = (open === '{{ t.id }}' ? null : '{{ t.id }}')">
+        <div>
+          <p class="font-semibold text-slate-800">KES {{ "{:,.2f}".format(t.amount) }}</p>
+          <p class="text-xs text-slate-400">{{ t.phone_number }} · {{ t.created_at.strftime('%d %b %Y %H:%M') }}</p>
+        </div>
+        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+          {% if t.status.value == 'successful' %} bg-emerald-50 text-emerald-700
+          {% elif t.status.value == 'failed' %} bg-red-50 text-red-600
+          {% else %} bg-amber-50 text-amber-700 {% endif %}">
+          {{ t.status.value|title }}
+        </span>
+      </div>
+      {% if t.error_reason %}<p class="text-xs text-red-500 mt-2">{{ t.error_reason }}</p>{% endif %}
+      <div x-show="open === '{{ t.id }}'" x-cloak class="mt-2 space-y-1.5">
+        {% if t.checkout_request_id %}<p class="text-[11px] text-slate-400">Checkout ID: {{ t.checkout_request_id }}</p>{% endif %}
+        {% if t.request_payload %}<pre class="text-[10px] text-slate-500 bg-slate-50 rounded-lg p-2 overflow-x-auto">Request: {{ t.request_payload }}</pre>{% endif %}
+        {% if t.response_payload %}<pre class="text-[10px] text-slate-500 bg-slate-50 rounded-lg p-2 overflow-x-auto">Response: {{ t.response_payload }}</pre>{% endif %}
+        {% if t.callback_payload %}<pre class="text-[10px] text-slate-500 bg-slate-50 rounded-lg p-2 overflow-x-auto">Callback: {{ t.callback_payload }}</pre>{% endif %}
+      </div>
+      <p class="text-[11px] text-brand-600 mt-1" x-show="open !== '{{ t.id }}'">Tap for details</p>
+    </div>
+    {% endfor %}
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

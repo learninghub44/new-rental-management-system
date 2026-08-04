@@ -1,0 +1,38 @@
+{% extends "shared/base.html" %}
+{% block title %}Maintenance{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 rounded-b-3xl flex items-center justify-between">
+    <h1 class="text-xl font-bold">Maintenance</h1>
+    <a href="/tenant/maintenance/new" class="text-xs bg-white/10 px-3 py-2 rounded-lg font-medium">+ New</a>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-3">
+    {% if not requests %}
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center text-sm text-slate-400 mt-4">
+        No maintenance requests yet.
+      </div>
+    {% endif %}
+    {% for item in requests %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="flex items-center justify-between">
+        <p class="font-semibold text-slate-800">{{ item.title }}</p>
+        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+          {% if item.status.value == 'closed' or item.status.value == 'completed' %} bg-emerald-50 text-emerald-700
+          {% elif item.status.value == 'submitted' %} bg-blue-50 text-blue-700
+          {% else %} bg-amber-50 text-amber-700 {% endif %}">
+          {{ item.status.value.replace('_',' ')|title }}
+        </span>
+      </div>
+      <p class="text-sm text-slate-500 mt-1">{{ item.description }}</p>
+      <p class="text-xs text-slate-400 mt-2">{{ item.priority.value|title }} priority · {{ item.created_at.strftime('%d %b %Y') }}</p>
+      {% if item.resolution_notes %}
+      <p class="text-xs text-slate-500 mt-2 bg-slate-50 rounded-lg p-2">{{ item.resolution_notes }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </main>
+
+  {% include "tenant/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

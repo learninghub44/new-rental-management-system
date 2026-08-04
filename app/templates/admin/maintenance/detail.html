@@ -1,0 +1,55 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/maintenance" class="text-slate-400 text-xs">← Maintenance</a>
+    <h1 class="text-xl font-bold mt-1">{{ item.title }}</h1>
+    <p class="text-slate-300 text-sm">{{ tenant.full_name if tenant else '—' }}</p>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mt-2">
+      <p class="text-sm text-slate-700">{{ item.description }}</p>
+      {% if item.image_url %}<img src="{{ item.image_url }}" class="mt-3 rounded-xl w-full" alt="" />{% endif %}
+      <p class="text-xs text-slate-400 mt-3">Submitted {{ item.created_at.strftime('%d %b %Y') }}</p>
+    </div>
+
+    <form method="post" action="/admin/maintenance/{{ item.id }}/update" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+      <h2 class="font-semibold text-slate-800">Update</h2>
+      <div>
+        <label class="text-xs text-slate-500">Status</label>
+        <select name="status" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+          {% for s in statuses %}
+          <option value="{{ s.value }}" {% if item.status.value == s.value %}selected{% endif %}>{{ s.value|replace('_',' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-500">Priority</label>
+        <select name="priority" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+          {% for p in priorities %}
+          <option value="{{ p.value }}" {% if item.priority.value == p.value %}selected{% endif %}>{{ p.value|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-500">Assign to</label>
+        <select name="assigned_to_user_id" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+          <option value="">Unassigned</option>
+          {% for s in staff %}
+          <option value="{{ s.id }}" {% if item.assigned_to_user_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-500">Resolution notes</label>
+        <textarea name="resolution_notes" rows="3" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">{{ item.resolution_notes or '' }}</textarea>
+      </div>
+      <button type="submit" class="w-full bg-brand-600 text-white font-semibold py-3 rounded-xl">Save Update</button>
+    </form>
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

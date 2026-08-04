@@ -1,0 +1,23 @@
+{% set path = request.url.path %}
+<nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around">
+  <a href="/admin/dashboard" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path == '/admin/dashboard' else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path == '/admin/dashboard' else '' }}/24/{{ '2563eb' if path == '/admin/dashboard' else '94a3b8' }}/dashboard.png" alt="" />
+    <span class="text-[11px] font-medium">Dashboard</span>
+  </a>
+  <a href="/admin/properties" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path.startswith('/admin/properties') else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path.startswith('/admin/properties') else '' }}/24/{{ '2563eb' if path.startswith('/admin/properties') else '94a3b8' }}/company.png" alt="" />
+    <span class="text-[11px] font-medium">Properties</span>
+  </a>
+  <a href="/admin/tenants" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path.startswith('/admin/tenants') else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path.startswith('/admin/tenants') else '' }}/24/{{ '2563eb' if path.startswith('/admin/tenants') else '94a3b8' }}/user-group-man-man.png" alt="" />
+    <span class="text-[11px] font-medium">Tenants</span>
+  </a>
+  <a href="/admin/payments" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path.startswith('/admin/payments') else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path.startswith('/admin/payments') else '' }}/24/{{ '2563eb' if path.startswith('/admin/payments') else '94a3b8' }}/mobile-payment.png" alt="" />
+    <span class="text-[11px] font-medium">Payments</span>
+  </a>
+  <a href="/admin/more" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path == '/admin/more' else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path == '/admin/more' else '' }}/24/{{ '2563eb' if path == '/admin/more' else '94a3b8' }}/menu.png" alt="" />
+    <span class="text-[11px] font-medium">More</span>
+  </a>
+</nav>

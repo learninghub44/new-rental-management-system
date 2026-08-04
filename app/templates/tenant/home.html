@@ -7,33 +7,30 @@
     <h1 class="text-2xl font-bold">{{ user.name }}</h1>
   </header>
 
-  <main class="px-6 -mt-4">
+  <main class="px-6 -mt-4 space-y-3">
+    <a href="/tenant/rent" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      {% if balance > 0 %}
+        <p class="text-xs text-slate-400">Balance due</p>
+        <p class="text-2xl font-bold text-red-600 mt-1">KES {{ "{:,.2f}".format(balance) }}</p>
+      {% elif balance < 0 %}
+        <p class="text-xs text-slate-400">Credit on account</p>
+        <p class="text-2xl font-bold text-emerald-600 mt-1">KES {{ "{:,.2f}".format(-balance) }}</p>
+      {% else %}
+        <p class="text-xs text-slate-400">Balance</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1">KES 0.00 — settled</p>
+      {% endif %}
+      <p class="text-xs text-brand-600 mt-2 font-medium">View invoices →</p>
+    </a>
+
+    {% if recent_payment %}
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-      <p class="text-sm text-slate-500">Balance functionality wires up in Phase 11 (Billing &amp; Ledger).</p>
+      <p class="text-xs text-slate-400">Last payment</p>
+      <p class="text-lg font-semibold text-slate-800 mt-1">KES {{ "{:,.2f}".format(recent_payment.amount) }}</p>
+      <p class="text-xs text-slate-400 mt-1">{{ recent_payment.payment_date.strftime('%d %b %Y') }} · {{ recent_payment.method.value.replace('_',' ')|title }}</p>
     </div>
+    {% endif %}
   </main>
 
-  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around">
-    <a href="/tenant/home" class="flex flex-col items-center gap-1 px-3 py-1 text-brand-600">
-      <img src="https://img.icons8.com/ios-filled/24/2563eb/home.png" alt="" />
-      <span class="text-[11px] font-medium">Home</span>
-    </a>
-    <a href="/tenant/rent" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/receipt.png" alt="" />
-      <span class="text-[11px] font-medium">Rent</span>
-    </a>
-    <a href="/tenant/payments" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/mobile-payment.png" alt="" />
-      <span class="text-[11px] font-medium">Payments</span>
-    </a>
-    <a href="/tenant/maintenance" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/maintenance.png" alt="" />
-      <span class="text-[11px] font-medium">Maintenance</span>
-    </a>
-    <a href="/tenant/profile" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/user.png" alt="" />
-      <span class="text-[11px] font-medium">Profile</span>
-    </a>
-  </nav>
+  {% include "tenant/_bottom_nav.html" with context %}
 </div>
 {% endblock %}

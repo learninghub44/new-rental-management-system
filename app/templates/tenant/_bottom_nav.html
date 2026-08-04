@@ -1,0 +1,23 @@
+{% set path = request.url.path %}
+<nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around">
+  <a href="/tenant/home" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path == '/tenant/home' else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path == '/tenant/home' else '' }}/24/{{ '2563eb' if path == '/tenant/home' else '94a3b8' }}/home.png" alt="" />
+    <span class="text-[11px] font-medium">Home</span>
+  </a>
+  <a href="/tenant/rent" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path == '/tenant/rent' else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path == '/tenant/rent' else '' }}/24/{{ '2563eb' if path == '/tenant/rent' else '94a3b8' }}/receipt.png" alt="" />
+    <span class="text-[11px] font-medium">Rent</span>
+  </a>
+  <a href="/tenant/payments" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path == '/tenant/payments' else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path == '/tenant/payments' else '' }}/24/{{ '2563eb' if path == '/tenant/payments' else '94a3b8' }}/mobile-payment.png" alt="" />
+    <span class="text-[11px] font-medium">Payments</span>
+  </a>
+  <a href="/tenant/maintenance" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path.startswith('/tenant/maintenance') else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path.startswith('/tenant/maintenance') else '' }}/24/{{ '2563eb' if path.startswith('/tenant/maintenance') else '94a3b8' }}/maintenance.png" alt="" />
+    <span class="text-[11px] font-medium">Maintenance</span>
+  </a>
+  <a href="/tenant/profile" class="flex flex-col items-center gap-1 px-3 py-1 {{ 'text-brand-600' if path == '/tenant/profile' else 'text-slate-400' }}">
+    <img src="https://img.icons8.com/ios{{ '-filled' if path == '/tenant/profile' else '' }}/24/{{ '2563eb' if path == '/tenant/profile' else '94a3b8' }}/user.png" alt="" />
+    <span class="text-[11px] font-medium">Profile</span>
+  </a>
+</nav>

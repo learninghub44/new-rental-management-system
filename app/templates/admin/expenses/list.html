@@ -1,0 +1,44 @@
+{% extends "shared/base.html" %}
+{% block title %}Expenses{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 flex items-center justify-between">
+    <div>
+      <a href="/admin/more" class="text-slate-400 text-xs">← More</a>
+      <h1 class="text-xl font-bold mt-1">Expenses</h1>
+    </div>
+    <a href="/admin/expenses/new" class="bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl">+ Add</a>
+  </header>
+
+  <main class="px-4 -mt-2 pb-4">
+    <form method="get" action="/admin/expenses" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4 mt-4">
+      <select name="property_id" onchange="this.form.submit()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+        <option value="">All properties</option>
+        {% for p in properties %}
+        <option value="{{ p.id }}" {% if selected_property_id == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% if expenses %}
+    <div class="space-y-3">
+      {% for e in expenses %}
+      <a href="/admin/expenses/{{ e.id }}/edit" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <div class="flex items-center justify-between">
+          <p class="font-semibold text-slate-800">{{ "{:,.2f}".format(e.amount) }}</p>
+          <span class="text-[11px] font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">{{ e.category.value|title }}</span>
+        </div>
+        <p class="text-sm text-slate-500 mt-1">{{ e.description }}</p>
+        <p class="text-xs text-slate-400 mt-1">{{ e.expense_date.strftime('%d %b %Y') }}</p>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-4">{{ total }} expense{{ 's' if total != 1 else '' }}</p>
+    {% else %}
+    <div class="text-center py-16"><p class="text-slate-400 text-sm">No expenses recorded.</p></div>
+    {% endif %}
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

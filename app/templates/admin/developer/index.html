@@ -1,0 +1,49 @@
+{% extends "shared/base.html" %}
+{% block title %}Developer{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/more" class="text-slate-400 text-xs">← More</a>
+    <h1 class="text-xl font-bold mt-1">Developer Section</h1>
+    <p class="text-slate-400 text-xs mt-1">Environment: {{ environment }}</p>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-3 mt-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 grid grid-cols-2 gap-4">
+      <div>
+        <p class="text-xs text-slate-400">Database</p>
+        <p class="font-semibold {{ 'text-emerald-600' if db_ok else 'text-red-600' }} mt-0.5">{{ 'Healthy' if db_ok else 'Down' }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-slate-400">PayHero</p>
+        <p class="font-semibold {{ 'text-emerald-600' if payhero_configured else 'text-amber-600' }} mt-0.5">{{ 'Configured' if payhero_configured else 'Not configured' }}</p>
+      </div>
+    </div>
+
+    <a href="/admin/developer/errors" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <div>
+        <p class="font-semibold text-slate-800">Error Logs</p>
+        <p class="text-xs text-slate-500 mt-0.5">{{ open_errors }} open</p>
+      </div>
+      <span class="text-slate-300">→</span>
+    </a>
+    <a href="/admin/developer/activity" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <p class="font-semibold text-slate-800">Activity Log</p>
+      <span class="text-slate-300">→</span>
+    </a>
+    <a href="/admin/developer/emails" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <div>
+        <p class="font-semibold text-slate-800">Email Log</p>
+        <p class="text-xs text-slate-500 mt-0.5">{{ failed_emails }} failed</p>
+      </div>
+      <span class="text-slate-300">→</span>
+    </a>
+    <a href="/admin/developer/payments" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <p class="font-semibold text-slate-800">PayHero Transactions</p>
+      <span class="text-slate-300">→</span>
+    </a>
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

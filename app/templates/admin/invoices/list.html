@@ -1,0 +1,58 @@
+{% extends "shared/base.html" %}
+{% block title %}Invoices{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 flex items-center justify-between">
+    <div>
+      <a href="/admin/more" class="text-slate-400 text-xs">← More</a>
+      <h1 class="text-xl font-bold mt-1">Invoices</h1>
+    </div>
+    <a href="/admin/invoices/generate" class="bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl">Generate monthly</a>
+  </header>
+
+  <main class="px-4 -mt-2 pb-4">
+    <form method="get" action="/admin/invoices" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
+      <select name="status_filter" onchange="this.form.submit()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+        <option value="">All statuses</option>
+        {% for s in statuses %}
+        <option value="{{ s.value }}" {% if status_filter == s.value %}selected{% endif %}>{{ s.value|replace('_',' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% if invoices %}
+    <div class="space-y-3">
+      {% for invoice in invoices %}
+      <a href="/admin/invoices/{{ invoice.id }}" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-semibold text-slate-800">{{ invoice.invoice_number }}</p>
+            <p class="text-xs text-slate-500">Due {{ invoice.due_date.strftime('%d %b %Y') }}</p>
+          </div>
+          <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+            {% if invoice.status.value == 'paid' %} bg-emerald-50 text-emerald-700
+            {% elif invoice.status.value == 'overdue' %} bg-red-50 text-red-600
+            {% elif invoice.status.value == 'partially_paid' %} bg-amber-50 text-amber-700
+            {% elif invoice.status.value == 'cancelled' %} bg-slate-100 text-slate-400
+            {% else %} bg-blue-50 text-blue-700 {% endif %}">
+            {{ invoice.status.value|replace('_',' ')|title }}
+          </span>
+        </div>
+        <div class="flex justify-between mt-2 text-xs text-slate-500">
+          <span>Total: {{ "{:,.2f}".format(invoice.total_amount) }}</span>
+          <span>Balance: {{ "{:,.2f}".format(invoice.balance) }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-4">{{ total }} invoice{{ 's' if total != 1 else '' }}</p>
+    {% else %}
+    <div class="text-center py-16">
+      <p class="text-slate-400 text-sm">No invoices yet.</p>
+    </div>
+    {% endif %}
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen" x-data="{ adjusting: false }">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/invoices" class="text-slate-400 text-xs">← Invoices</a>
+    <h1 class="text-xl font-bold mt-1">{{ invoice.invoice_number }}</h1>
+    <p class="text-slate-300 text-sm">{{ tenant.full_name if tenant else '' }}</p>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mt-2">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+          {% if invoice.status.value == 'paid' %} bg-emerald-50 text-emerald-700
+          {% elif invoice.status.value == 'overdue' %} bg-red-50 text-red-600
+          {% elif invoice.status.value == 'partially_paid' %} bg-amber-50 text-amber-700
+          {% elif invoice.status.value == 'cancelled' %} bg-slate-100 text-slate-400
+          {% else %} bg-blue-50 text-blue-700 {% endif %}">
+          {{ invoice.status.value|replace('_',' ')|title }}
+        </span>
+        <span class="text-xs text-slate-400">Due {{ invoice.due_date.strftime('%d %b %Y') }}</span>
+      </div>
+      <div class="space-y-1.5 text-sm">
+        <div class="flex justify-between"><span class="text-slate-500">Rent</span><span>{{ "{:,.2f}".format(invoice.rent) }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Water</span><span>{{ "{:,.2f}".format(invoice.water) }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Electricity</span><span>{{ "{:,.2f}".format(invoice.electricity) }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Service charges</span><span>{{ "{:,.2f}".format(invoice.service_charges) }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Penalties</span><span>{{ "{:,.2f}".format(invoice.penalties) }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Discounts</span><span>-{{ "{:,.2f}".format(invoice.discounts) }}</span></div>
+        <div class="flex justify-between font-semibold border-t border-slate-100 pt-2 mt-1"><span>Total</span><span>{{ "{:,.2f}".format(invoice.total_amount) }}</span></div>
+        <div class="flex justify-between text-emerald-600"><span>Paid</span><span>{{ "{:,.2f}".format(invoice.paid_amount) }}</span></div>
+        <div class="flex justify-between font-semibold"><span>Balance</span><span>{{ "{:,.2f}".format(invoice.balance) }}</span></div>
+      </div>
+      {% if invoice.notes %}<p class="text-xs text-slate-500 mt-3 bg-slate-50 rounded-lg p-2">{{ invoice.notes }}</p>{% endif %}
+
+      {% if invoice.status.value != 'cancelled' %}
+      <div class="flex gap-2 mt-4">
+        <a href="/admin/payments/record?tenant_id={{ tenant.id }}" class="flex-1 text-center bg-brand-600 text-white text-sm font-semibold py-2.5 rounded-xl">Record Payment</a>
+        <button @click="adjusting = !adjusting" class="flex-1 border border-slate-200 text-slate-600 text-sm font-medium py-2.5 rounded-xl">Adjust</button>
+      </div>
+      {% if invoice.status.value != 'paid' %}
+      <button hx-post="/admin/invoices/{{ invoice.id }}/cancel" hx-confirm="Cancel this invoice and write off the remaining balance?"
+              hx-swap="none" class="w-full mt-2 text-red-600 text-xs font-medium py-2">Cancel Invoice</button>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <form x-show="adjusting" x-cloak method="post" action="/admin/invoices/{{ invoice.id }}/adjust"
+          class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+      <h2 class="font-semibold text-slate-800">Adjust Charges</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-500">Penalties</label>
+          <input type="number" step="0.01" name="penalties" value="{{ invoice.penalties }}" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">Discounts</label>
+          <input type="number" step="0.01" name="discounts" value="{{ invoice.discounts }}" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-slate-500">Notes</label>
+        <textarea name="notes" rows="2" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">{{ invoice.notes or '' }}</textarea>
+      </div>
+      <button type="submit" class="w-full bg-slate-800 text-white font-semibold py-2.5 rounded-xl">Save Adjustment</button>
+    </form>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-semibold text-slate-800 mb-3">Payments</h2>
+      {% if not payments %}<p class="text-xs text-slate-400">No payments recorded against this invoice yet.</p>{% endif %}
+      {% for p in payments %}
+      <a href="/admin/payments/{{ p.id }}" class="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+        <div>
+          <p class="text-sm font-medium text-slate-700">{{ "{:,.2f}".format(p.amount) }}</p>
+          <p class="text-xs text-slate-400">{{ p.payment_date.strftime('%d %b %Y') }} · {{ p.method.value|replace('_',' ')|title }}</p>
+        </div>
+        <span class="text-[11px] font-medium text-slate-400">{{ p.status.value|title }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-semibold text-slate-800 mb-3">Ledger</h2>
+      {% for entry in ledger_entries %}
+      <div class="flex justify-between items-center py-1.5 text-xs">
+        <span class="text-slate-500">{{ entry.transaction_date.strftime('%d %b') }} · {{ entry.description }}</span>
+        <span class="font-medium {{ 'text-red-600' if entry.debit > 0 else 'text-emerald-600' }}">
+          {{ "+" if entry.debit > 0 else "-" }}{{ "{:,.2f}".format(entry.debit if entry.debit > 0 else entry.credit) }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

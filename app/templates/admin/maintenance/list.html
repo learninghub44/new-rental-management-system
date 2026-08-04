@@ -1,0 +1,45 @@
+{% extends "shared/base.html" %}
+{% block title %}Maintenance{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/more" class="text-slate-400 text-xs">← More</a>
+    <h1 class="text-xl font-bold mt-1">Maintenance Requests</h1>
+  </header>
+
+  <main class="px-4 -mt-2 pb-4">
+    <form method="get" action="/admin/maintenance" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4 mt-4">
+      <select name="status_filter" onchange="this.form.submit()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+        <option value="">All statuses</option>
+        {% for s in statuses %}
+        <option value="{{ s.value }}" {% if status_filter == s.value %}selected{% endif %}>{{ s.value|replace('_',' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% if requests %}
+    <div class="space-y-3">
+      {% for item in requests %}
+      <a href="/admin/maintenance/{{ item.id }}" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <div class="flex items-center justify-between">
+          <p class="font-semibold text-slate-800">{{ item.title }}</p>
+          <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+            {% if item.status.value in ['closed','completed'] %} bg-emerald-50 text-emerald-700
+            {% elif item.status.value == 'submitted' %} bg-blue-50 text-blue-700
+            {% else %} bg-amber-50 text-amber-700 {% endif %}">
+            {{ item.status.value|replace('_',' ')|title }}
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">{{ tenants_by_id[item.tenant_id].full_name if item.tenant_id in tenants_by_id else '—' }} · {{ item.priority.value|title }} priority</p>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-4">{{ total }} request{{ 's' if total != 1 else '' }}</p>
+    {% else %}
+    <div class="text-center py-16"><p class="text-slate-400 text-sm">No maintenance requests.</p></div>
+    {% endif %}
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

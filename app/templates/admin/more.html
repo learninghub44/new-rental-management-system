@@ -7,6 +7,34 @@
   </header>
 
   <main class="px-4 -mt-2 space-y-3">
+    <a href="/admin/invoices" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="flex items-center gap-3">
+        <img src="https://img.icons8.com/ios/24/2563eb/invoice.png" alt="" />
+        <span class="font-medium text-slate-800">Invoices</span>
+      </div>
+      <span class="text-slate-300">›</span>
+    </a>
+    <a href="/admin/maintenance" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="flex items-center gap-3">
+        <img src="https://img.icons8.com/ios/24/2563eb/maintenance.png" alt="" />
+        <span class="font-medium text-slate-800">Maintenance</span>
+      </div>
+      <span class="text-slate-300">›</span>
+    </a>
+    <a href="/admin/expenses" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="flex items-center gap-3">
+        <img src="https://img.icons8.com/ios/24/2563eb/expensive.png" alt="" />
+        <span class="font-medium text-slate-800">Expenses</span>
+      </div>
+      <span class="text-slate-300">›</span>
+    </a>
+    <a href="/admin/reports" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="flex items-center gap-3">
+        <img src="https://img.icons8.com/ios/24/2563eb/combo-chart.png" alt="" />
+        <span class="font-medium text-slate-800">Reports</span>
+      </div>
+      <span class="text-slate-300">›</span>
+    </a>
     <a href="/admin/users" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
       <div class="flex items-center gap-3">
         <img src="https://img.icons8.com/ios/24/2563eb/user-group-man-man.png" alt="" />
@@ -21,36 +49,17 @@
       </div>
       <span class="text-xs text-slate-400">Coming soon</span>
     </div>
-    <div class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4 opacity-50">
+    {% if user.role.value == 'admin' %}
+    <a href="/admin/developer" class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
       <div class="flex items-center gap-3">
-        <img src="https://img.icons8.com/ios/24/94a3b8/source-code.png" alt="" />
-        <span class="font-medium text-slate-500">Developer</span>
+        <img src="https://img.icons8.com/ios/24/2563eb/source-code.png" alt="" />
+        <span class="font-medium text-slate-800">Developer</span>
       </div>
-      <span class="text-xs text-slate-400">Coming soon</span>
-    </div>
+      <span class="text-slate-300">›</span>
+    </a>
+    {% endif %}
   </main>
 
-  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around">
-    <a href="/admin/dashboard" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/dashboard.png" alt="" />
-      <span class="text-[11px] font-medium">Dashboard</span>
-    </a>
-    <a href="/admin/properties" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/company.png" alt="" />
-      <span class="text-[11px] font-medium">Properties</span>
-    </a>
-    <a href="/admin/tenants" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/user-group-man-man.png" alt="" />
-      <span class="text-[11px] font-medium">Tenants</span>
-    </a>
-    <a href="/admin/payments" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/mobile-payment.png" alt="" />
-      <span class="text-[11px] font-medium">Payments</span>
-    </a>
-    <a href="/admin/more" class="flex flex-col items-center gap-1 px-3 py-1 text-brand-600">
-      <img src="https://img.icons8.com/ios-filled/24/2563eb/menu.png" alt="" />
-      <span class="text-[11px] font-medium">More</span>
-    </a>
-  </nav>
+  {% include "admin/_bottom_nav.html" with context %}
 </div>
 {% endblock %}

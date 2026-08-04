@@ -1,0 +1,39 @@
+{% extends "shared/base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/more" class="text-slate-400 text-xs">← More</a>
+    <h1 class="text-xl font-bold mt-1">Reports</h1>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-3 mt-4">
+    <a href="/admin/reports/rent-roll.pdf" target="_blank" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <p class="font-semibold text-slate-800">Rent Roll (PDF)</p>
+      <p class="text-xs text-slate-500 mt-1">Every active lease, its monthly rent and current balance.</p>
+    </a>
+    <a href="/admin/reports/arrears.xlsx" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <p class="font-semibold text-slate-800">Arrears (Excel)</p>
+      <p class="text-xs text-slate-500 mt-1">Tenants with an outstanding balance, for follow-up.</p>
+    </a>
+
+    <form action="/admin/reports/income-expense.pdf" method="get" target="_blank"
+          class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
+      <p class="font-semibold text-slate-800">Income vs Expenses (PDF)</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-slate-500">From</label>
+          <input type="date" name="start" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-500">To</label>
+          <input type="date" name="end" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-slate-800 text-white font-semibold py-2.5 rounded-xl">Generate</button>
+    </form>
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

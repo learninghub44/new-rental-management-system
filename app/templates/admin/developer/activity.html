@@ -1,0 +1,27 @@
+{% extends "shared/base.html" %}
+{% block title %}Activity Log{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/developer" class="text-slate-400 text-xs">← Developer</a>
+    <h1 class="text-xl font-bold mt-1">Activity Log</h1>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-2 mt-4">
+    {% if not entries %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center text-sm text-slate-400">No activity yet.</div>
+    {% endif %}
+    {% for e in entries %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ e.action.value|title }}</span>
+        <span class="text-[11px] text-slate-400">{{ e.created_at.strftime('%d %b %Y %H:%M') }}</span>
+      </div>
+      <p class="text-sm text-slate-700 mt-1.5">{{ e.description or (e.entity_type ~ ' ' ~ (e.entity_id or '')) }}</p>
+    </div>
+    {% endfor %}
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

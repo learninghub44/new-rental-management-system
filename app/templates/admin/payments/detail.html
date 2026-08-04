@@ -1,0 +1,32 @@
+{% extends "shared/base.html" %}
+{% block title %}Payment{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/payments" class="text-slate-400 text-xs">← Payments</a>
+    <h1 class="text-xl font-bold mt-1">KES {{ "{:,.2f}".format(payment.amount) }}</h1>
+    <p class="text-slate-300 text-sm">{{ tenant.full_name if tenant else '—' }}</p>
+  </header>
+
+  <main class="px-4 -mt-2 space-y-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mt-2 space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-slate-500">Status</span>
+        <span class="font-medium
+          {% if payment.status.value == 'successful' %}text-emerald-600{% elif payment.status.value == 'failed' %}text-red-600{% else %}text-amber-600{% endif %}">
+          {{ payment.status.value|title }}
+        </span>
+      </div>
+      <div class="flex justify-between"><span class="text-slate-500">Method</span><span class="font-medium">{{ payment.method.value|replace('_',' ')|title }}</span></div>
+      <div class="flex justify-between"><span class="text-slate-500">Date</span><span class="font-medium">{{ payment.payment_date.strftime('%d %b %Y') }}</span></div>
+      {% if payment.reference %}<div class="flex justify-between"><span class="text-slate-500">Reference</span><span class="font-medium">{{ payment.reference }}</span></div>{% endif %}
+      {% if payment.transaction_id %}<div class="flex justify-between"><span class="text-slate-500">Transaction ID</span><span class="font-medium">{{ payment.transaction_id }}</span></div>{% endif %}
+    </div>
+
+    {% if receipt and receipt.pdf_url %}
+    <a href="/admin/payments/{{ payment.id }}/receipt" class="block text-center bg-brand-600 text-white font-semibold py-3 rounded-xl">Download Receipt</a>
+    {% endif %}
+  </main>
+
+  {% include "admin/_bottom_nav.html" with context %}
+</div>
+{% endblock %}

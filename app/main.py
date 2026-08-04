@@ -11,12 +11,18 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.templating import templates
-from app.api.routes import auth, pages
+from app.api.routes import auth, pages, tenant as tenant_pages, webhooks
 from app.api.routes.admin import users as admin_users
 from app.api.routes.admin import properties as admin_properties
 from app.api.routes.admin import units as admin_units
 from app.api.routes.admin import tenants as admin_tenants
 from app.api.routes.admin import leases as admin_leases
+from app.api.routes.admin import billing as admin_billing
+from app.api.routes.admin import payments as admin_payments
+from app.api.routes.admin import maintenance as admin_maintenance
+from app.api.routes.admin import expenses as admin_expenses
+from app.api.routes.admin import reports as admin_reports
+from app.api.routes.admin import developer as admin_developer
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger("rental_app")
@@ -48,6 +54,15 @@ app.include_router(admin_properties.router)
 app.include_router(admin_units.router)
 app.include_router(admin_tenants.router)
 app.include_router(admin_leases.router)
+app.include_router(admin_billing.router)
+app.include_router(admin_billing.tenant_router)
+app.include_router(admin_payments.router)
+app.include_router(admin_maintenance.router)
+app.include_router(admin_expenses.router)
+app.include_router(admin_reports.router)
+app.include_router(admin_developer.router)
+app.include_router(tenant_pages.router)
+app.include_router(webhooks.router)
 
 
 @app.exception_handler(StarletteHTTPException)

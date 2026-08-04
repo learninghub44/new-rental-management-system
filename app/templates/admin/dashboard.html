@@ -12,33 +12,27 @@
     </form>
   </header>
 
-  <main class="px-6 -mt-4">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-      <p class="text-sm text-slate-500">Properties, tenants, billing and reports wire up in the following build phases.</p>
+  <main class="px-6 -mt-4 space-y-3">
+    <div class="grid grid-cols-2 gap-3">
+      <a href="/admin/invoices" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <p class="text-xs text-slate-400">Invoices</p>
+        <p class="text-sm font-semibold text-slate-800 mt-1">View & generate</p>
+      </a>
+      <a href="/admin/payments" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <p class="text-xs text-slate-400">Payments</p>
+        <p class="text-sm font-semibold text-slate-800 mt-1">Record & track</p>
+      </a>
+      <a href="/admin/maintenance" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <p class="text-xs text-slate-400">Maintenance</p>
+        <p class="text-sm font-semibold text-slate-800 mt-1">Requests</p>
+      </a>
+      <a href="/admin/reports" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <p class="text-xs text-slate-400">Reports</p>
+        <p class="text-sm font-semibold text-slate-800 mt-1">Rent roll & more</p>
+      </a>
     </div>
   </main>
 
-  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-2 py-2 flex justify-around">
-    <a href="/admin/dashboard" class="flex flex-col items-center gap-1 px-3 py-1 text-brand-600">
-      <img src="https://img.icons8.com/ios-filled/24/2563eb/dashboard.png" alt="" />
-      <span class="text-[11px] font-medium">Dashboard</span>
-    </a>
-    <a href="/admin/properties" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/company.png" alt="" />
-      <span class="text-[11px] font-medium">Properties</span>
-    </a>
-    <a href="/admin/tenants" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/user-group-man-man.png" alt="" />
-      <span class="text-[11px] font-medium">Tenants</span>
-    </a>
-    <a href="/admin/payments" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/mobile-payment.png" alt="" />
-      <span class="text-[11px] font-medium">Payments</span>
-    </a>
-    <a href="/admin/more" class="flex flex-col items-center gap-1 px-3 py-1 text-slate-400">
-      <img src="https://img.icons8.com/ios/24/94a3b8/menu.png" alt="" />
-      <span class="text-[11px] font-medium">More</span>
-    </a>
-  </nav>
+  {% include "admin/_bottom_nav.html" with context %}
 </div>
 {% endblock %}

@@ -1,0 +1,100 @@
+{% extends "shared/base.html" %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen" x-data="{ paying: false, invoiceId: '', amount: '{{ balance if balance > 0 else '' }}', phone: '', sending: false, error: '' }">
+  <header class="bg-brand-600 text-white px-6 pt-8 pb-6 rounded-b-3xl">
+    <p class="text-brand-100 text-sm">
+      {% if balance > 0 %}Balance due{% elif balance < 0 %}Credit on account{% else %}Balance{% endif %}
+    </p>
+    <h1 class="text-3xl font-bold mt-1">
+      {% if balance < 0 %}KES {{ "{:,.2f}".format(-balance) }}{% else %}KES {{ "{:,.2f}".format(balance) }}{% endif %}
+    </h1>
+  </header>
+
+  <main class="px-4 -mt-4 space-y-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5" x-show="!paying">
+      <button @click="paying = true" class="w-full bg-brand-600 text-white font-semibold py-3 rounded-xl">
+        Pay with M-Pesa
+      </button>
+    </div>
+
+    <form x-show="paying" x-cloak class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3"
+          @submit.prevent="
+            sending = true; error = '';
+            fetch('/tenant/payments/pay', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+              body: new URLSearchParams({invoice_id: invoiceId, amount: amount, phone_number: phone})
+            }).then(async r => {
+              const data = await r.json();
+              sending = false;
+              if (!r.ok) { error = data.error || data.message || 'Payment could not be started'; return; }
+              paying = false;
+              setTimeout(() => location.reload(), 4000);
+            }).catch(() => { sending = false; error = 'Network error — try again'; })
+          ">
+      <h2 class="font-semibold text-slate-800">Pay with M-Pesa</h2>
+
+      {% if outstanding_invoices %}
+      <div>
+        <label class="text-xs text-slate-500">Apply to invoice (optional)</label>
+        <select x-model="invoiceId" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+          <option value="">General payment</option>
+          {% for invoice in outstanding_invoices %}
+          <option value="{{ invoice.id }}">{{ invoice.invoice_number }} — bal. {{ "{:,.2f}".format(invoice.balance) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div>
+        <label class="text-xs text-slate-500">Amount (KES)</label>
+        <input x-model="amount" type="number" min="1" step="0.01" required
+               class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+      </div>
+      <div>
+        <label class="text-xs text-slate-500">M-Pesa phone number</label>
+        <input x-model="phone" type="text" placeholder="07XXXXXXXX" required
+               class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+      </div>
+
+      <p x-show="error" x-text="error" class="text-xs text-red-600"></p>
+
+      <div class="flex gap-2">
+        <button type="button" @click="paying = false" class="flex-1 border border-slate-200 text-slate-600 font-medium py-2.5 rounded-xl">Cancel</button>
+        <button type="submit" :disabled="sending" class="flex-1 bg-brand-600 text-white font-semibold py-2.5 rounded-xl disabled:opacity-50">
+          <span x-show="!sending">Send STK Push</span>
+          <span x-show="sending">Sending…</span>
+        </button>
+      </div>
+    </form>
+
+    <h2 class="text-sm font-semibold text-slate-500 px-2 pt-2">Payment history</h2>
+    {% if not payments %}
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center text-sm text-slate-400">
+        No payments yet.
+      </div>
+    {% endif %}
+    {% for payment in payments %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center justify-between">
+      <div>
+        <p class="font-semibold text-slate-800">KES {{ "{:,.2f}".format(payment.amount) }}</p>
+        <p class="text-xs text-slate-400 mt-0.5">{{ payment.payment_date.strftime('%d %b %Y') }} · {{ payment.method.value.replace('_',' ')|title }}</p>
+        {% if payment.reference or payment.transaction_id %}
+        <p class="text-[11px] text-slate-300 mt-0.5">Ref: {{ payment.transaction_id or payment.reference }}</p>
+        {% endif %}
+      </div>
+      <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+        {% if payment.status.value == 'successful' %} bg-emerald-50 text-emerald-700
+        {% elif payment.status.value == 'pending' %} bg-amber-50 text-amber-700
+        {% elif payment.status.value == 'failed' %} bg-red-50 text-red-600
+        {% else %} bg-slate-100 text-slate-500 {% endif %}">
+        {{ payment.status.value|title }}
+      </span>
+    </div>
+    {% endfor %}
+  </main>
+
+  {% include "tenant/_bottom_nav.html" with context %}
+</div>
+{% endblock %}
