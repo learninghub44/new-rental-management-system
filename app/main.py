@@ -12,6 +12,9 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.templating import templates
 from app.api.routes import auth, pages
+from app.api.routes.admin import users as admin_users
+from app.api.routes.admin import properties as admin_properties
+from app.api.routes.admin import units as admin_units
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger("rental_app")
@@ -38,6 +41,9 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(pages.router)
 app.include_router(auth.router)
+app.include_router(admin_users.router)
+app.include_router(admin_properties.router)
+app.include_router(admin_units.router)
 
 
 @app.exception_handler(StarletteHTTPException)

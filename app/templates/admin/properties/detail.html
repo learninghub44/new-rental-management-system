@@ -1,0 +1,66 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ property.name }}{% endblock %}
+{% block content %}
+<div class="pb-24 min-h-screen">
+  {% if property.image_url %}
+  <img src="{{ property.image_url }}" alt="" class="w-full h-44 object-cover" />
+  {% endif %}
+  <header class="bg-slate-900 text-white px-6 {{ 'pt-6' if property.image_url else 'pt-8' }} pb-6 {{ '-mt-2 rounded-t-3xl' if property.image_url else '' }}">
+    <a href="/admin/properties" class="text-slate-400 text-xs">← Properties</a>
+    <div class="flex items-center justify-between mt-1">
+      <h1 class="text-xl font-bold">{{ property.name }}</h1>
+      <a href="/admin/properties/{{ property.id }}/edit" class="text-xs bg-white/10 px-3 py-2 rounded-lg">Edit</a>
+    </div>
+    <p class="text-slate-400 text-sm mt-1">{{ property.location }}</p>
+  </header>
+
+  <main class="px-4 -mt-2">
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center">
+        <p class="text-2xl font-bold text-slate-800">{{ total_units }}</p>
+        <p class="text-xs text-slate-500">Total Units</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center">
+        <p class="text-2xl font-bold text-emerald-600">{{ occupied_units }}</p>
+        <p class="text-xs text-slate-500">Occupied</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold text-slate-800">Units</h2>
+      <a href="/admin/properties/{{ property.id }}/units/new" class="text-sm text-brand-600 font-medium">+ Add Unit</a>
+    </div>
+
+    {% if units %}
+    <div class="space-y-2">
+      {% for u in units %}
+      <a href="/admin/properties/{{ property.id }}/units/{{ u.id }}/edit" class="block bg-white rounded-xl shadow-sm border border-slate-100 p-3.5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-slate-800">Unit {{ u.unit_number }}</p>
+            <p class="text-xs text-slate-500">{{ u.unit_type.value | replace('_', ' ') | capitalize }} · {{ u.bedrooms }} bed · KES {{ "{:,.0f}".format(u.monthly_rent) }}/mo</p>
+          </div>
+          <span class="inline-block text-[11px] font-medium px-2 py-1 rounded-full
+            {% if u.status.value == 'available' %}bg-emerald-50 text-emerald-700
+            {% elif u.status.value == 'occupied' %}bg-brand-50 text-brand-700
+            {% elif u.status.value == 'maintenance' %}bg-amber-50 text-amber-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">
+            {{ u.status.value | capitalize }}
+          </span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-10">
+      <p class="text-slate-400 text-sm">No units added yet.</p>
+    </div>
+    {% endif %}
+
+    {% if property.status.value != 'inactive' %}
+    <button hx-post="/admin/properties/{{ property.id }}/archive" hx-confirm="Archive this property?"
+            class="w-full mt-6 rounded-xl bg-red-50 text-red-700 font-medium py-3 text-sm">Archive Property</button>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

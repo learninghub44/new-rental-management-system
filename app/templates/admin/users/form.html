@@ -1,0 +1,95 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ "Add User" if mode == "create" else "Edit User" }}{% endblock %}
+{% block content %}
+<div class="min-h-screen pb-16">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/users" class="text-slate-400 text-xs">← Users</a>
+    <h1 class="text-xl font-bold mt-1">{{ "Add User" if mode == "create" else "Edit " + target.name }}</h1>
+  </header>
+
+  <main class="px-6 -mt-2">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      {% if error %}
+      <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{{ error }}</div>
+      {% endif %}
+      {% if message %}
+      <div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3">{{ message }}</div>
+      {% endif %}
+
+      {% if mode == "create" %}
+      <p class="text-xs text-slate-500 mb-4 bg-slate-50 rounded-lg px-3 py-2">
+        No self sign-up — you're creating this account directly. The starting password will be the
+        <strong>last 6 digits of their phone number</strong>; they can change it after logging in.
+      </p>
+      {% endif %}
+
+      <form method="post" action="{{ '/admin/users/new' if mode == 'create' else '/admin/users/' + target.id|string + '/edit' }}" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+          <input name="name" required value="{{ form_data.name if form_data else (target.name if target else '') }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input name="email" type="email" required value="{{ form_data.email if form_data else (target.email if target else '') }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+          <input name="phone" required placeholder="07XXXXXXXX" value="{{ form_data.phone if form_data else (target.phone if target else '') }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+          {% if mode == "create" %}
+          <p class="text-xs text-slate-400 mt-1">Last 6 digits become their default password.</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Role</label>
+          <select name="role" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            {% for r in roles %}
+            <option value="{{ r.value }}" {% if (form_data and form_data.role == r.value) or (target and target.role.value == r.value) %}selected{% endif %}>
+              {{ r.value | capitalize }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if mode == "edit" %}
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+          <select name="status" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            {% for s in statuses %}
+            <option value="{{ s.value }}" {% if target.status.value == s.value %}selected{% endif %}>{{ s.value | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="w-full rounded-xl bg-brand-600 text-white font-semibold py-3.5">
+          {{ "Create User" if mode == "create" else "Save Changes" }}
+        </button>
+      </form>
+
+      {% if mode == "edit" %}
+      <div class="mt-6 pt-6 border-t border-slate-100 space-y-2">
+        <button hx-post="/admin/users/{{ target.id }}/reset-password" hx-target="#reset-result" hx-swap="innerHTML"
+                class="w-full rounded-xl bg-slate-100 text-slate-700 font-medium py-3 text-sm">
+          Reset Password to Phone Default
+        </button>
+        <div id="reset-result"></div>
+
+        {% if target.status.value == 'active' %}
+        <button hx-post="/admin/users/{{ target.id }}/disable" hx-confirm="Disable this user?"
+                class="w-full rounded-xl bg-red-50 text-red-700 font-medium py-3 text-sm">Disable User</button>
+        {% else %}
+        <button hx-post="/admin/users/{{ target.id }}/activate"
+                class="w-full rounded-xl bg-emerald-50 text-emerald-700 font-medium py-3 text-sm">Activate User</button>
+        {% endif %}
+
+        <a href="/admin/users/{{ target.id }}/login-history" class="block text-center text-sm text-brand-600 font-medium py-2">
+          View Login History
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

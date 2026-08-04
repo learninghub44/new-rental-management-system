@@ -1,0 +1,68 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ "Add Property" if mode == "create" else "Edit Property" }}{% endblock %}
+{% block content %}
+<div class="min-h-screen pb-16">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="{{ '/admin/properties' if mode == 'create' else '/admin/properties/' + target.id|string }}" class="text-slate-400 text-xs">← Back</a>
+    <h1 class="text-xl font-bold mt-1">{{ "Add Property" if mode == "create" else "Edit " + target.name }}</h1>
+  </header>
+
+  <main class="px-6 -mt-2">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      {% if error %}
+      <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data"
+            action="{{ '/admin/properties/new' if mode == 'create' else '/admin/properties/' + target.id|string + '/edit' }}"
+            class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Property name</label>
+          <input name="name" required value="{{ target.name if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+          <input name="location" required value="{{ target.location if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <textarea name="description" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">{{ target.description if target else '' }}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Manager / Caretaker</label>
+          <select name="manager_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            <option value="">Unassigned</option>
+            {% for m in managers %}
+            <option value="{{ m.id }}" {% if target and target.manager_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.role.value }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Photo</label>
+          {% if target and target.image_url %}
+          <img src="{{ target.image_url }}" alt="" class="w-full h-32 object-cover rounded-xl mb-2" />
+          {% endif %}
+          <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm" />
+        </div>
+        {% if mode == "edit" %}
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+          <select name="status" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            {% for s in statuses %}
+            <option value="{{ s.value }}" {% if target.status.value == s.value %}selected{% endif %}>{{ s.value | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="w-full rounded-xl bg-brand-600 text-white font-semibold py-3.5">
+          {{ "Create Property" if mode == "create" else "Save Changes" }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}

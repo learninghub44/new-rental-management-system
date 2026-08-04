@@ -1,0 +1,31 @@
+{% extends "shared/base.html" %}
+{% block title %}Login History{% endblock %}
+{% block content %}
+<div class="min-h-screen pb-16">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/users/{{ target.id }}/edit" class="text-slate-400 text-xs">← {{ target.name }}</a>
+    <h1 class="text-xl font-bold mt-1">Login History</h1>
+  </header>
+
+  <main class="px-4 -mt-2">
+    {% if history %}
+    <div class="space-y-2">
+      {% for h in history %}
+      <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium {{ 'text-emerald-700' if h.successful else 'text-red-600' }}">
+            {{ "Successful" if h.successful else "Failed" }} login
+          </p>
+          <p class="text-xs text-slate-400">{{ h.ip_address or "unknown IP" }} · {{ h.created_at.strftime("%b %d, %Y %H:%M") }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+      <p class="text-slate-400 text-sm">No login attempts recorded yet.</p>
+    </div>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

@@ -21,3 +21,8 @@ def tenant_home(request: Request, user: User = Depends(require_tenant)):
 @router.get("/admin/dashboard")
 def admin_dashboard(request: Request, user: User = Depends(require_staff)):
     return templates.TemplateResponse("admin/dashboard.html", {"request": request, "user": user})
+
+
+@router.get("/admin/more")
+def admin_more(request: Request, user: User = Depends(require_staff)):
+    return templates.TemplateResponse("admin/more.html", {"request": request, "user": user})

@@ -1,0 +1,68 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ "Add Unit" if mode == "create" else "Edit Unit" }}{% endblock %}
+{% block content %}
+<div class="min-h-screen pb-16">
+  <header class="bg-slate-900 text-white px-6 pt-8 pb-6">
+    <a href="/admin/properties/{{ property.id }}" class="text-slate-400 text-xs">← {{ property.name }}</a>
+    <h1 class="text-xl font-bold mt-1">{{ "Add Unit" if mode == "create" else "Edit Unit " + target.unit_number }}</h1>
+  </header>
+
+  <main class="px-6 -mt-2">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      {% if error %}
+      <div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{{ error }}</div>
+      {% endif %}
+
+      <form method="post"
+            action="{{ '/admin/properties/' + property.id|string + '/units/new' if mode == 'create' else '/admin/properties/' + property.id|string + '/units/' + target.id|string + '/edit' }}"
+            class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Unit number</label>
+          <input name="unit_number" required value="{{ target.unit_number if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Floor</label>
+          <input name="floor" value="{{ target.floor if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Unit type</label>
+          <select name="unit_type" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            {% for t in unit_types %}
+            <option value="{{ t.value }}" {% if target and target.unit_type.value == t.value %}selected{% endif %}>
+              {{ t.value | replace('_', ' ') | capitalize }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Bedrooms</label>
+          <input name="bedrooms" type="number" min="0" value="{{ target.bedrooms if target else 0 }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Monthly rent (KES)</label>
+          <input name="monthly_rent" type="number" step="0.01" min="0.01" required
+                 value="{{ target.monthly_rent if target else '' }}"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base" />
+        </div>
+        {% if mode == "edit" %}
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+          <select name="status" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-base">
+            {% for s in statuses %}
+            <option value="{{ s.value }}" {% if target.status.value == s.value %}selected{% endif %}>{{ s.value | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="w-full rounded-xl bg-brand-600 text-white font-semibold py-3.5">
+          {{ "Create Unit" if mode == "create" else "Save Changes" }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}
