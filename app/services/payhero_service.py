@@ -7,6 +7,7 @@ import base64
 import uuid
 from datetime import date
 from typing import Optional
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
 import httpx
 from sqlalchemy.orm import Session
@@ -25,6 +26,24 @@ class PayHeroServiceError(Exception):
 def _basic_auth_header() -> str:
     raw = f"{settings.PAYHERO_API_USERNAME}:{settings.PAYHERO_API_PASSWORD}".encode()
     return f"Basic {base64.b64encode(raw).decode()}"
+
+
+def _signed_callback_url() -> str:
+    """
+    PayHero's callback payload has no signature we can verify against, so we
+    embed PAYHERO_WEBHOOK_SECRET as a query param on the callback URL we hand
+    PayHero at request time. The webhook handler then requires that same
+    secret on the inbound call — see app/api/routes/webhooks.py. Without a
+    configured secret, callers can't be distinguished from anyone who
+    guesses/observes a checkout_request_id.
+    """
+    base = settings.PAYHERO_CALLBACK_URL
+    if not settings.PAYHERO_WEBHOOK_SECRET or not base:
+        return base
+    parsed = urlparse(base)
+    query = dict(parse_qsl(parsed.query))
+    query["secret"] = settings.PAYHERO_WEBHOOK_SECRET
+    return urlunparse(parsed._replace(query=urlencode(query)))
 
 
 def initiate_stk_push(db: Session, tenant: Tenant, data: STKPushRequest) -> PayHeroTransaction:
@@ -57,7 +76,7 @@ def initiate_stk_push(db: Session, tenant: Tenant, data: STKPushRequest) -> PayH
         "channel_id": settings.PAYHERO_CHANNEL_ID,
         "provider": "m-pesa",
         "external_reference": str(payment.id),
-        "callback_url": settings.PAYHERO_CALLBACK_URL,
+        "callback_url": _signed_callback_url(),
     }
     txn.request_payload = request_payload
 
@@ -97,7 +116,11 @@ def initiate_stk_push(db: Session, tenant: Tenant, data: STKPushRequest) -> PayH
 
 
 def handle_callback(db: Session, payload: dict) -> Optional[PayHeroTransaction]:
-    """Reconciles PayHero's async webhook against the pending transaction it refers to."""
+    """
+    Reconciles PayHero's async webhook against the pending transaction it
+    refers to. Caller (app/api/routes/webhooks.py) is responsible for
+    rejecting requests that don't carry the shared secret before this runs.
+    """
     checkout_id = (
         payload.get("CheckoutRequestID")
         or payload.get("checkout_request_id")
@@ -109,6 +132,28 @@ def handle_callback(db: Session, payload: dict) -> Optional[PayHeroTransaction]:
     txn = db.query(PayHeroTransaction).filter(PayHeroTransaction.checkout_request_id == str(checkout_id)).first()
     if not txn:
         return None
+
+    # Only a still-pending transaction can be settled by a callback — blocks
+    # replays/duplicates from flipping an already-resolved transaction again.
+    if txn.status != PaymentStatus.PENDING:
+        return txn
+
+    # Sanity-check the amount the callback claims against what we actually
+    # requested. A mismatch means the payload doesn't correspond to the
+    # transaction we initiated, even if the checkout_request_id matches.
+    callback_amount = payload.get("Amount") or payload.get("amount")
+    if callback_amount is not None:
+        try:
+            from decimal import Decimal
+            if Decimal(str(callback_amount)) != Decimal(str(txn.amount)):
+                txn.status = PaymentStatus.FAILED
+                txn.error_reason = "Callback amount did not match the requested amount"
+                txn.callback_payload = payload
+                db.add(txn)
+                db.flush()
+                return txn
+        except Exception:
+            pass
 
     txn.callback_payload = payload
     result_indicator = str(payload.get("status") or payload.get("ResultCode") or "").strip().lower()

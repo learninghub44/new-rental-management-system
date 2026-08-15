@@ -1,3 +1,9 @@
+"""
+Unit CRUD + status transitions. A unit's OCCUPIED status must stay in sync
+with whether it actually has an active lease — see the guard in
+update_unit(), which blocks an admin from marking a still-leased unit
+AVAILABLE/INACTIVE/MAINTENANCE and silently orphaning the tenant's record.
+"""
 import uuid
 from typing import Optional
 
@@ -5,8 +11,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.property import Unit
-from app.models.tenant import Tenant
-from app.models.enums import UnitStatus
+from app.models.tenant import Tenant, Lease
+from app.models.enums import UnitStatus, LeaseStatus
 from app.schemas.unit import UnitCreate, UnitUpdate
 
 
@@ -49,7 +55,17 @@ def update_unit(db: Session, unit_id: uuid.UUID, data: UnitUpdate) -> Unit:
     if data.monthly_rent is not None:
         unit.monthly_rent = data.monthly_rent
     if data.status:
-        # Guard: can't mark a unit with an active tenant as available/inactive silently.
+        if unit.status == UnitStatus.OCCUPIED and data.status != UnitStatus.OCCUPIED:
+            has_active_lease = (
+                db.query(Lease)
+                .filter(Lease.unit_id == unit.id, Lease.status == LeaseStatus.ACTIVE)
+                .first()
+                is not None
+            )
+            if has_active_lease:
+                raise UnitServiceError(
+                    "This unit has an active lease — terminate or move out the tenant before changing its status"
+                )
         unit.status = data.status
 
     db.add(unit)

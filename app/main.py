@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +26,23 @@ from app.api.routes.admin import developer as admin_developer
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger("rental_app")
+
+if settings.ENVIRONMENT == "production":
+    problems = []
+    if not settings.ALLOWED_ORIGINS or "*" in settings.ALLOWED_ORIGINS:
+        problems.append("ALLOWED_ORIGINS must be set to your real domain(s), not empty/'*'")
+    if settings.DEBUG:
+        problems.append("DEBUG must be false")
+    if not settings.PAYHERO_WEBHOOK_SECRET:
+        problems.append("PAYHERO_WEBHOOK_SECRET must be set so payment callbacks can be verified")
+    if settings.STORAGE_BACKEND == "local":
+        problems.append("STORAGE_BACKEND=local loses files on every deploy — set STORAGE_BACKEND=s3")
+    if problems:
+        for p in problems:
+            logger.error("Production config problem: %s", p)
+        raise RuntimeError(
+            "Refusing to start in production with unsafe configuration:\n- " + "\n- ".join(problems)
+        )
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -92,5 +109,28 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok", "app": settings.APP_NAME, "environment": settings.ENVIRONMENT}
+def health_check(response: Response):
+    from sqlalchemy import text
+    from app.core.database import SessionLocal
+
+    checks = {"database": "ok"}
+    healthy = True
+
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as exc:  # noqa: BLE001 — health check must report, not raise
+        checks["database"] = f"error: {exc}"
+        healthy = False
+    finally:
+        db.close()
+
+    if not healthy:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+    return {
+        "status": "ok" if healthy else "degraded",
+        "app": settings.APP_NAME,
+        "environment": settings.ENVIRONMENT,
+        "checks": checks,
+    }

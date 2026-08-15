@@ -1,7 +1,6 @@
 """
-Local disk-based file storage. Files are saved under app/static/uploads and
-served directly by StaticFiles — swap for S3/Cloudflare R2 by replacing
-save_upload() without touching callers.
+User-facing file uploads (property images, etc). Validates and hands off to
+app/services/storage.py, which is what actually decides local disk vs S3.
 """
 import uuid
 from pathlib import Path
@@ -9,6 +8,7 @@ from pathlib import Path
 from fastapi import UploadFile
 
 from app.core.config import settings
+from app.services.storage import save_bytes, StorageError
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
@@ -29,9 +29,7 @@ async def save_upload(file: UploadFile, subfolder: str) -> str:
     ext = Path(file.filename or "").suffix.lower() or ".jpg"
     filename = f"{uuid.uuid4().hex}{ext}"
 
-    target_dir = Path(settings.UPLOAD_DIR) / subfolder
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / filename
-    target_path.write_bytes(contents)
-
-    return f"/static/uploads/{subfolder}/{filename}"
+    try:
+        return save_bytes(contents, subfolder, filename, content_type=file.content_type)
+    except StorageError as exc:
+        raise UploadError(f"Upload failed: {exc}") from exc
