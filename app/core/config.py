@@ -58,7 +58,7 @@ class Settings(BaseSettings):
 
     # File storage
     # "local" writes to UPLOAD_DIR on the container's disk — fine for dev,
-    # but Railway containers are ephemeral, so anything saved this way is
+    # but most PaaS containers (Render, Railway, etc.) are ephemeral, so anything saved this way is
     # lost on every redeploy/restart. Use "s3" in production against any
     # S3-compatible bucket (AWS S3, Supabase Storage, Cloudflare R2, etc).
     STORAGE_BACKEND: str = "local"  # local | s3

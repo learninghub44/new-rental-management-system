@@ -3,9 +3,9 @@ Pluggable file storage: local disk for development, S3-compatible object
 storage (AWS S3, Supabase Storage, Cloudflare R2, MinIO, ...) for
 production. Controlled by settings.STORAGE_BACKEND.
 
-Railway containers are ephemeral — anything written under STORAGE_BACKEND
-"local" disappears on every redeploy or restart, so production must run
-with STORAGE_BACKEND=s3 and the S3_* settings configured.
+Most PaaS containers (Render, Railway, etc.) are ephemeral — anything written
+under STORAGE_BACKEND "local" disappears on every redeploy or restart, so
+production must run with STORAGE_BACKEND=s3 and the S3_* settings configured.
 
 Callers should use save_bytes()/delete_object() rather than touching disk
 or a storage SDK directly, so the backend can keep changing without
