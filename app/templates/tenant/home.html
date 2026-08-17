@@ -14,7 +14,7 @@
     {% set monthly_rent = tenant.monthly_rent or 0 %}
     {{ tp.rent_status_card(balance, next_invoice, monthly_rent) }}
 
-    <a href="/tenant/payments" class="flex items-center justify-center gap-2 w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl shadow-sm">
+    <a href="/tenant/payments?start=1" class="flex items-center justify-center gap-2 w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl shadow-sm">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
       Pay Rent
     </a>
@@ -34,7 +34,7 @@
     </div>
 
     {% if overdue_amount and overdue_amount > 0 %}
-    <a href="/tenant/payments" class="flex items-center justify-center gap-2 w-full bg-white border border-[#FCA5A5] text-tp-danger font-semibold py-3 rounded-2xl">
+    <a href="/tenant/payments?start=1" class="flex items-center justify-center gap-2 w-full bg-white border border-[#FCA5A5] text-tp-danger font-semibold py-3 rounded-2xl">
       Pay overdue balance now
     </a>
     {% endif %}
