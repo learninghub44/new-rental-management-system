@@ -14,7 +14,7 @@
     {% set monthly_rent = tenant.monthly_rent or (lease.rent_amount if lease else 0) %}
     {{ tp.rent_status_card(balance, next_invoice, monthly_rent) }}
 
-    <a href="/tenant/payments" class="flex items-center justify-center gap-2 w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl shadow-sm">
+    <a href="/tenant/payments?start=1" class="flex items-center justify-center gap-2 w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl shadow-sm">
       Make a Payment
     </a>
 

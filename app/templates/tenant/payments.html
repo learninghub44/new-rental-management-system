@@ -2,12 +2,15 @@
 {% import "tenant/_macros.html" as tp %}
 {% block title %}Payments{% endblock %}
 {% block content %}
+{% set lead_invoice = outstanding_invoices[0] if outstanding_invoices else none %}
+{% set payment_for = (lead_invoice.billing_period_start.strftime('%B %Y') + ' Rent') if lead_invoice else 'Rent Payment' %}
 <div class="tp pb-24 min-h-screen bg-tp-bg"
      x-data="tenantPay({
        balance: {{ balance }},
        tenantPhone: {{ (tenant.phone or '')|tojson }},
        propertyName: {{ (property.name if property else '')|tojson }},
-       unitNumber: {{ (unit.unit_number if unit else '')|tojson }}
+       unitNumber: {{ (unit.unit_number if unit else '')|tojson }},
+       autoStart: {{ 'true' if request.query_params.get('start') else 'false' }}
      })"
      x-init="init()">
 
@@ -22,11 +25,29 @@
 
   <main class="px-5 space-y-4">
 
-    <!-- Entry point -->
-    <div x-show="step === 'idle'" class="rounded-2xl bg-white border border-tp-border p-5">
-      <button @click="startFlow()" class="w-full flex items-center justify-center gap-2 bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl">
-        Pay with M-Pesa
-      </button>
+    <!-- Entry point: proper checkout start screen, not a generic button -->
+    <div x-show="step === 'idle'" class="rounded-2xl bg-white border border-tp-border overflow-hidden">
+      <div class="px-6 pt-6 pb-5 text-center">
+        <p class="text-xs font-semibold text-tp-muted uppercase tracking-wide">Pay Rent</p>
+
+        {% if property or unit %}
+        <div class="flex items-center justify-center gap-2 mt-3 text-sm">
+          {% if property %}<span class="font-medium text-tp-ink">{{ property.name }}</span>{% endif %}
+          {% if unit %}<span class="text-tp-muted">· Unit {{ unit.unit_number }}</span>{% endif %}
+        </div>
+        {% endif %}
+
+        <p class="text-xs text-tp-muted mt-1">{{ payment_for }}</p>
+
+        <p class="text-4xl font-bold text-tp-ink mt-3 tabular-nums">
+          {{ tp.money(balance if balance > 0 else (tenant.monthly_rent or 0)) }}
+        </p>
+      </div>
+      <div class="px-5 pb-5">
+        <button @click="startFlow()" class="w-full flex items-center justify-center gap-2 bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl">
+          Continue
+        </button>
+      </div>
     </div>
 
     <!-- Step: amount + payer phone -->
@@ -210,6 +231,7 @@ function tenantPay(config) {
     tenantPhone: config.tenantPhone,
     propertyName: config.propertyName,
     unitNumber: config.unitNumber,
+    autoStart: config.autoStart || false,
     step: 'idle',
     invoiceId: '',
     amount: '',
@@ -224,6 +246,10 @@ function tenantPay(config) {
 
     init() {
       if (this.balance > 0) this.amount = this.balance.toFixed(2);
+      if (this.autoStart) {
+        this.startFlow();
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     },
     fmt(v) {
       const n = parseFloat(v || 0);
