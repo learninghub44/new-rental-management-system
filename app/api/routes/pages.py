@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Request
@@ -32,7 +32,12 @@ def tenant_home(request: Request, db: Session = Depends(get_db), user: User = De
     next_invoice = None
     paid_this_month = Decimal("0")
     paid_this_year = Decimal("0")
+    total_paid = Decimal("0")
     overdue_amount = Decimal("0")
+
+    hour = datetime.now().hour
+    greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
+    first_name = (user.name or "").split(" ")[0] if user.name else ""
 
     if tenant:
         recent_payment = (
@@ -61,6 +66,7 @@ def tenant_home(request: Request, db: Session = Depends(get_db), user: User = De
             .all()
         )
         for p in successful_payments:
+            total_paid += p.amount
             if p.payment_date.year == today.year:
                 paid_this_year += p.amount
                 if p.payment_date.month == today.month:
@@ -79,7 +85,8 @@ def tenant_home(request: Request, db: Session = Depends(get_db), user: User = De
             "request": request, "user": user, "tenant": tenant, "balance": balance,
             "recent_payment": recent_payment, "next_invoice": next_invoice,
             "paid_this_month": paid_this_month, "paid_this_year": paid_this_year,
-            "overdue_amount": overdue_amount,
+            "total_paid": total_paid, "overdue_amount": overdue_amount,
+            "greeting": greeting, "first_name": first_name,
         },
     )
 

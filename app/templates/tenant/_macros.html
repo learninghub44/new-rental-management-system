@@ -59,6 +59,32 @@ KES {{ "{:,.2f}".format(v) }}
   {% endif %}
 {% endmacro %}
 
+{#
+  Fintech metric card — soft tinted background, dark-tinted text, small
+  colored accent dot. One distinct color identity per financial metric
+  (never a single color repeated across every card).
+  tone: 'rent' | 'success' | 'balance' | 'next' | 'year' | 'overdue'
+#}
+{% macro metric_card(label, value, tone, sub=none) %}
+  {% set tones = {
+    'rent':    ('bg-[#EEF2FF]', 'text-[#4F46E5]', 'text-[#312E81]'),
+    'success': ('bg-[#ECFDF5]', 'text-[#10B981]', 'text-[#065F46]'),
+    'balance': ('bg-[#FFFBEB]', 'text-[#F59E0B]', 'text-[#92400E]'),
+    'next':    ('bg-[#F5F3FF]', 'text-[#8B5CF6]', 'text-[#5B21B6]'),
+    'year':    ('bg-[#ECFEFF]', 'text-[#06B6D4]', 'text-[#155E75]'),
+    'overdue': ('bg-[#FEF2F2]', 'text-[#EF4444]', 'text-[#991B1B]'),
+  } %}
+  {% set bg, accent, text = tones[tone] %}
+  <div class="rounded-2xl {{ bg }} p-4">
+    <div class="flex items-center gap-1.5">
+      <span class="w-1.5 h-1.5 rounded-full {{ accent }} bg-current"></span>
+      <span class="text-xs font-medium {{ text }} opacity-80">{{ label }}</span>
+    </div>
+    <p class="text-lg font-bold {{ text }} mt-1.5 tabular-nums leading-tight">{{ value }}</p>
+    {% if sub %}<p class="text-[11px] {{ text }} opacity-70 mt-0.5">{{ sub }}</p>{% endif %}
+  </div>
+{% endmacro %}
+
 {% macro invoice_status_badge(status) %}
   {% set s = status.value %}
   <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
