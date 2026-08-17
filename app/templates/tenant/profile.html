@@ -1,38 +1,51 @@
 {% extends "shared/base.html" %}
 {% block title %}Profile{% endblock %}
 {% block content %}
-<div class="pb-24 min-h-screen">
-  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 rounded-b-3xl">
-    <h1 class="text-xl font-bold">{{ user.name }}</h1>
-    <p class="text-slate-300 text-sm mt-1">{{ user.email }}</p>
+<div class="tp pb-24 min-h-screen bg-tp-bg">
+
+  <header class="px-5 pt-7 pb-5 flex items-center gap-3">
+    <div class="w-14 h-14 rounded-full bg-tp-primary text-white flex items-center justify-center text-lg font-bold shrink-0">
+      {{ user.name[:1]|upper }}
+    </div>
+    <div>
+      <h1 class="text-lg font-bold text-tp-ink">{{ user.name }}</h1>
+      <p class="text-tp-muted text-sm">{{ user.email }}</p>
+    </div>
   </header>
 
-  <main class="px-4 -mt-2 space-y-4">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mt-4 space-y-2 text-sm">
-      <div class="flex justify-between"><span class="text-slate-400">Phone</span><span class="font-medium text-slate-700">{{ tenant.phone }}</span></div>
-      {% if tenant.national_id %}<div class="flex justify-between"><span class="text-slate-400">ID Number</span><span class="font-medium text-slate-700">{{ tenant.national_id }}</span></div>{% endif %}
-      {% if tenant.emergency_contact_name %}<div class="flex justify-between"><span class="text-slate-400">Emergency Contact</span><span class="font-medium text-slate-700">{{ tenant.emergency_contact_name }}</span></div>{% endif %}
+  <main class="px-5 space-y-4">
+
+    <div class="rounded-2xl bg-white border border-tp-border divide-y divide-tp-border overflow-hidden">
+      <div class="flex justify-between px-4 py-3"><span class="text-sm text-tp-muted">Phone</span><span class="text-sm font-semibold text-tp-ink">{{ tenant.phone }}</span></div>
+      {% if tenant.national_id %}<div class="flex justify-between px-4 py-3"><span class="text-sm text-tp-muted">ID Number</span><span class="text-sm font-semibold text-tp-ink">{{ tenant.national_id }}</span></div>{% endif %}
+      {% if tenant.emergency_contact_name %}<div class="flex justify-between px-4 py-3"><span class="text-sm text-tp-muted">Emergency Contact</span><span class="text-sm font-semibold text-tp-ink text-right">{{ tenant.emergency_contact_name }}{% if tenant.emergency_contact_phone %}<br><span class="font-normal text-tp-muted">{{ tenant.emergency_contact_phone }}</span>{% endif %}</span></div>{% endif %}
+      <div class="flex justify-between px-4 py-3"><span class="text-sm text-tp-muted">Account status</span><span class="text-sm font-semibold text-tp-success">{{ tenant.status.value|title }}</span></div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-      <h2 class="font-semibold text-slate-800 mb-3">Change Password</h2>
-      {% if error %}<p class="text-sm text-red-600 bg-red-50 rounded-lg p-3 mb-3">{{ error }}</p>{% endif %}
-      {% if success %}<p class="text-sm text-emerald-700 bg-emerald-50 rounded-lg p-3 mb-3">{{ success }}</p>{% endif %}
+    <a href="/tenant/rent" class="flex items-center justify-between rounded-2xl bg-white border border-tp-border p-4">
+      <span class="text-sm font-semibold text-tp-ink">My Rental</span>
+      <span class="text-tp-muted text-sm">→</span>
+    </a>
+
+    <div class="rounded-2xl bg-white border border-tp-border p-5">
+      <h2 class="font-semibold text-tp-ink mb-3 text-sm">Change Password</h2>
+      {% if error %}<p class="text-sm text-tp-danger bg-red-50 rounded-xl p-3 mb-3">{{ error }}</p>{% endif %}
+      {% if success %}<p class="text-sm text-tp-success bg-green-50 rounded-xl p-3 mb-3">{{ success }}</p>{% endif %}
       <form method="post" action="/tenant/profile/change-password" class="space-y-3">
         <div>
-          <label class="text-xs text-slate-500">Current password</label>
-          <input type="password" name="current_password" required class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+          <label class="text-xs text-tp-muted font-medium">Current password</label>
+          <input type="password" name="current_password" required class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm" />
         </div>
         <div>
-          <label class="text-xs text-slate-500">New password</label>
-          <input type="password" name="new_password" required minlength="8" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+          <label class="text-xs text-tp-muted font-medium">New password</label>
+          <input type="password" name="new_password" required minlength="8" class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm" />
         </div>
-        <button type="submit" class="w-full bg-brand-600 text-white font-semibold py-2.5 rounded-xl">Update Password</button>
+        <button type="submit" class="w-full bg-tp-primary text-white font-semibold py-2.5 rounded-xl">Update Password</button>
       </form>
     </div>
 
     <form method="post" action="/logout">
-      <button type="submit" class="w-full border border-slate-200 text-slate-500 font-medium py-2.5 rounded-xl">Log out</button>
+      <button type="submit" class="w-full border border-tp-border text-tp-muted font-medium py-2.5 rounded-xl">Log out</button>
     </form>
   </main>
 

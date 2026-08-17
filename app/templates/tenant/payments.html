@@ -1,44 +1,42 @@
 {% extends "shared/base.html" %}
+{% import "tenant/_macros.html" as tp %}
 {% block title %}Payments{% endblock %}
 {% block content %}
-<div class="pb-24 min-h-screen" x-data="{ paying: false, invoiceId: '', amount: '{{ balance if balance > 0 else '' }}', phone: '', sending: false, error: '' }">
-  <header class="bg-brand-600 text-white px-6 pt-8 pb-6 rounded-b-3xl">
-    <p class="text-brand-100 text-sm">
+<div class="tp pb-24 min-h-screen bg-tp-bg"
+     x-data="tenantPay({
+       balance: {{ balance }},
+       tenantPhone: {{ (tenant.phone or '')|tojson }},
+       propertyName: {{ (property.name if property else '')|tojson }},
+       unitNumber: {{ (unit.unit_number if unit else '')|tojson }}
+     })"
+     x-init="init()">
+
+  <header class="px-5 pt-7 pb-4">
+    <p class="text-tp-muted text-sm">
       {% if balance > 0 %}Balance due{% elif balance < 0 %}Credit on account{% else %}Balance{% endif %}
     </p>
-    <h1 class="text-3xl font-bold mt-1">
-      {% if balance < 0 %}KES {{ "{:,.2f}".format(-balance) }}{% else %}KES {{ "{:,.2f}".format(balance) }}{% endif %}
+    <h1 class="text-3xl font-bold text-tp-ink mt-1 tabular-nums">
+      {% if balance < 0 %}{{ tp.money(-balance) }}{% else %}{{ tp.money(balance) }}{% endif %}
     </h1>
   </header>
 
-  <main class="px-4 -mt-4 space-y-4">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5" x-show="!paying">
-      <button @click="paying = true" class="w-full bg-brand-600 text-white font-semibold py-3 rounded-xl">
+  <main class="px-5 space-y-4">
+
+    <!-- Entry point -->
+    <div x-show="step === 'idle'" class="rounded-2xl bg-white border border-tp-border p-5">
+      <button @click="startFlow()" class="w-full flex items-center justify-center gap-2 bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl">
         Pay with M-Pesa
       </button>
     </div>
 
-    <form x-show="paying" x-cloak class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3"
-          @submit.prevent="
-            sending = true; error = '';
-            fetch('/tenant/payments/pay', {
-              method: 'POST',
-              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-              body: new URLSearchParams({invoice_id: invoiceId, amount: amount, phone_number: phone})
-            }).then(async r => {
-              const data = await r.json();
-              sending = false;
-              if (!r.ok) { error = data.error || data.message || 'Payment could not be started'; return; }
-              paying = false;
-              setTimeout(() => location.reload(), 4000);
-            }).catch(() => { sending = false; error = 'Network error — try again'; })
-          ">
-      <h2 class="font-semibold text-slate-800">Pay with M-Pesa</h2>
+    <!-- Step: amount + payer phone -->
+    <form x-show="step === 'form'" x-cloak @submit.prevent="goToConfirm()" class="rounded-2xl bg-white border border-tp-border p-5 space-y-4">
+      <h2 class="font-semibold text-tp-ink">Pay Rent</h2>
 
       {% if outstanding_invoices %}
       <div>
-        <label class="text-xs text-slate-500">Apply to invoice (optional)</label>
-        <select x-model="invoiceId" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+        <label class="text-xs text-tp-muted font-medium">Apply to invoice (optional)</label>
+        <select x-model="invoiceId" class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm bg-white">
           <option value="">General payment</option>
           {% for invoice in outstanding_invoices %}
           <option value="{{ invoice.id }}">{{ invoice.invoice_number }} — bal. {{ "{:,.2f}".format(invoice.balance) }}</option>
@@ -48,53 +46,275 @@
       {% endif %}
 
       <div>
-        <label class="text-xs text-slate-500">Amount (KES)</label>
+        <label class="text-xs text-tp-muted font-medium">Amount (KES)</label>
         <input x-model="amount" type="number" min="1" step="0.01" required
-               class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+               class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm font-semibold text-tp-ink" />
       </div>
+
       <div>
-        <label class="text-xs text-slate-500">M-Pesa phone number</label>
-        <input x-model="phone" type="text" placeholder="07XXXXXXXX" required
-               class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+        <label class="text-xs text-tp-muted font-medium">Payment Number</label>
+        <div class="mt-1.5 space-y-2">
+          <label class="flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors" :class="phoneChoice === 'mine' ? 'border-tp-primary bg-indigo-50/40' : 'border-tp-border'">
+            <input type="radio" name="phoneChoice" value="mine" x-model="phoneChoice" class="accent-tp-primary" :disabled="!tenantPhone" />
+            <span class="text-sm">
+              <span class="font-medium text-tp-ink block">Use my number</span>
+              <span class="text-tp-muted text-xs" x-text="tenantPhone || 'No number on file'"></span>
+            </span>
+          </label>
+          <label class="flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-colors" :class="phoneChoice === 'other' ? 'border-tp-primary bg-indigo-50/40' : 'border-tp-border'">
+            <input type="radio" name="phoneChoice" value="other" x-model="phoneChoice" class="accent-tp-primary" />
+            <span class="text-sm flex-1">
+              <span class="font-medium text-tp-ink block mb-1">Use another number</span>
+              <input x-show="phoneChoice === 'other'" x-model="otherPhone" type="text" placeholder="07XX XXX XXX"
+                     class="w-full rounded-lg border border-tp-border px-2.5 py-1.5 text-sm" @click.stop />
+              <span class="text-tp-muted text-xs" x-show="phoneChoice !== 'other'">A parent, spouse, or employer can pay on your behalf</span>
+            </span>
+          </label>
+        </div>
       </div>
 
-      <p x-show="error" x-text="error" class="text-xs text-red-600"></p>
+      <p x-show="error" x-text="error" class="text-xs text-tp-danger"></p>
 
-      <div class="flex gap-2">
-        <button type="button" @click="paying = false" class="flex-1 border border-slate-200 text-slate-600 font-medium py-2.5 rounded-xl">Cancel</button>
-        <button type="submit" :disabled="sending" class="flex-1 bg-brand-600 text-white font-semibold py-2.5 rounded-xl disabled:opacity-50">
-          <span x-show="!sending">Send STK Push</span>
-          <span x-show="sending">Sending…</span>
-        </button>
+      <div class="flex gap-2 pt-1">
+        <button type="button" @click="reset()" class="flex-1 border border-tp-border text-tp-muted font-medium py-2.5 rounded-xl">Cancel</button>
+        <button type="submit" class="flex-1 bg-tp-primary text-white font-semibold py-2.5 rounded-xl">Continue</button>
       </div>
     </form>
 
-    <h2 class="text-sm font-semibold text-slate-500 px-2 pt-2">Payment history</h2>
-    {% if not payments %}
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 text-center text-sm text-slate-400">
-        No payments yet.
+    <!-- Step: confirmation -->
+    <div x-show="step === 'confirm'" x-cloak class="rounded-2xl bg-white border border-tp-border p-5 space-y-4">
+      <h2 class="font-semibold text-tp-ink">Confirm Payment</h2>
+      <div class="rounded-xl bg-tp-bg border border-tp-border divide-y divide-tp-border overflow-hidden text-sm">
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Rent amount</span><span class="font-semibold text-tp-ink tabular-nums" x-text="fmt(amount)"></span></div>
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Current balance</span><span class="font-semibold text-tp-ink tabular-nums" x-text="fmt(balance)"></span></div>
+        <template x-if="propertyName"><div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Property</span><span class="font-semibold text-tp-ink" x-text="propertyName"></span></div></template>
+        <template x-if="unitNumber"><div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Unit</span><span class="font-semibold text-tp-ink" x-text="unitNumber"></span></div></template>
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Payment method</span><span class="font-semibold text-tp-ink">M-Pesa</span></div>
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Payment number</span><span class="font-semibold text-tp-ink" x-text="effectivePhone()"></span></div>
       </div>
-    {% endif %}
-    {% for payment in payments %}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center justify-between">
-      <div>
-        <p class="font-semibold text-slate-800">KES {{ "{:,.2f}".format(payment.amount) }}</p>
-        <p class="text-xs text-slate-400 mt-0.5">{{ payment.payment_date.strftime('%d %b %Y') }} · {{ payment.method.value.replace('_',' ')|title }}</p>
-        {% if payment.reference or payment.transaction_id %}
-        <p class="text-[11px] text-slate-300 mt-0.5">Ref: {{ payment.transaction_id or payment.reference }}</p>
-        {% endif %}
+      <p x-show="error" x-text="error" class="text-xs text-tp-danger"></p>
+      <div class="flex gap-2">
+        <button @click="step = 'form'" class="flex-1 border border-tp-border text-tp-muted font-medium py-2.5 rounded-xl">Back</button>
+        <button @click="submitPayment()" :disabled="sending" class="flex-1 bg-tp-primary text-white font-semibold py-2.5 rounded-xl disabled:opacity-50">
+          <span x-show="!sending">Confirm &amp; Pay</span>
+          <span x-show="sending">Sending…</span>
+        </button>
       </div>
-      <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
-        {% if payment.status.value == 'successful' %} bg-emerald-50 text-emerald-700
-        {% elif payment.status.value == 'pending' %} bg-amber-50 text-amber-700
-        {% elif payment.status.value == 'failed' %} bg-red-50 text-red-600
-        {% else %} bg-slate-100 text-slate-500 {% endif %}">
-        {{ payment.status.value|title }}
-      </span>
     </div>
-    {% endfor %}
+
+    <!-- Step: processing -->
+    <div x-show="step === 'processing'" x-cloak class="rounded-2xl bg-white border border-tp-border p-8 text-center">
+      <div class="w-12 h-12 mx-auto rounded-full border-4 border-indigo-100 border-t-tp-primary tp-spin"></div>
+      <p class="font-semibold text-tp-ink mt-4">Check your phone</p>
+      <p class="text-sm text-tp-muted mt-1">Enter your M-Pesa PIN to complete the payment of <span class="font-semibold text-tp-ink" x-text="fmt(amount)"></span></p>
+      <p class="text-xs text-tp-muted mt-4" x-show="pollCount > 8">Still waiting for confirmation — this can take a minute.</p>
+      <p class="text-xs text-tp-muted mt-4" x-show="pollCount > 16">
+        Taking longer than usual. You can check
+        <a href="/tenant/payments" class="text-tp-primary font-medium">payment history</a> shortly — we'll record it as soon as it clears.
+      </p>
+    </div>
+
+    <!-- Step: success -->
+    <div x-show="step === 'success'" x-cloak class="rounded-2xl bg-white border border-tp-border p-6 text-center">
+      <div class="w-14 h-14 mx-auto rounded-full bg-green-50 flex items-center justify-center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-success" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+      </div>
+      <p class="font-bold text-tp-ink text-lg mt-3">Payment successful</p>
+      <p class="text-2xl font-bold text-tp-ink mt-1 tabular-nums" x-text="fmt(result.amount)"></p>
+      <div class="rounded-xl bg-tp-bg border border-tp-border divide-y divide-tp-border overflow-hidden text-sm text-left mt-4">
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Date</span><span class="font-semibold text-tp-ink" x-text="result.payment_date"></span></div>
+        <template x-if="propertyName"><div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Property</span><span class="font-semibold text-tp-ink" x-text="propertyName"></span></div></template>
+        <template x-if="unitNumber"><div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Unit</span><span class="font-semibold text-tp-ink" x-text="unitNumber"></span></div></template>
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Reference</span><span class="font-semibold text-tp-ink" x-text="result.reference || '—'"></span></div>
+        <div class="flex justify-between px-4 py-2.5"><span class="text-tp-muted">Method</span><span class="font-semibold text-tp-ink">M-Pesa</span></div>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <a :href="result.has_receipt ? ('/tenant/payments/' + paymentId + '/receipt') : '#'"
+           class="flex-1 border border-tp-border text-tp-ink font-medium py-2.5 rounded-xl"
+           :class="!result.has_receipt && 'opacity-40 pointer-events-none'">View Receipt</a>
+        <button @click="finish()" class="flex-1 bg-tp-primary text-white font-semibold py-2.5 rounded-xl">Done</button>
+      </div>
+    </div>
+
+    <!-- Step: failed -->
+    <div x-show="step === 'failed'" x-cloak class="rounded-2xl bg-white border border-tp-border p-6 text-center">
+      <div class="w-14 h-14 mx-auto rounded-full bg-red-50 flex items-center justify-center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-danger" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+      </div>
+      <p class="font-bold text-tp-ink text-lg mt-3">Payment could not be completed</p>
+      <p class="text-sm text-tp-muted mt-1" x-text="error || 'The payment was not confirmed. No money was deducted if you did not enter your PIN.'"></p>
+      <div class="flex gap-2 mt-5">
+        <button @click="reset()" class="flex-1 border border-tp-border text-tp-muted font-medium py-2.5 rounded-xl">Close</button>
+        <button @click="step = 'form'" class="flex-1 bg-tp-primary text-white font-semibold py-2.5 rounded-xl">Try Again</button>
+      </div>
+    </div>
+
+    <section class="pt-2">
+      <h2 class="text-xs font-semibold text-tp-muted uppercase tracking-wide px-1 pb-2">Payment history</h2>
+      {% if not payments %}
+        <div class="rounded-2xl bg-white border border-tp-border p-6 text-center text-sm text-tp-muted">
+          No payments yet.
+        </div>
+      {% endif %}
+      <div class="space-y-2.5">
+        {% for payment in payments %}
+        {% set receipt = receipts_by_payment.get(payment.id) %}
+        <div class="rounded-2xl bg-white border border-tp-border p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0
+                {% if payment.status.value == 'successful' %} bg-green-50
+                {% elif payment.status.value == 'pending' %} bg-amber-50
+                {% elif payment.status.value == 'failed' %} bg-red-50
+                {% else %} bg-slate-100 {% endif %}">
+                {% if payment.status.value == 'successful' %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-success" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                {% elif payment.status.value == 'pending' %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-warning" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+                {% elif payment.status.value == 'failed' %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-danger" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                {% else %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-muted" stroke-width="2.4" stroke-linecap="round"><path d="M9 9h6v6H9z" /></svg>
+                {% endif %}
+              </div>
+              <div>
+                <p class="font-semibold text-tp-ink text-sm tabular-nums">{{ "{:,.2f}".format(payment.amount) }}</p>
+                <p class="text-xs text-tp-muted mt-0.5">{{ payment.payment_date.strftime('%d %b %Y') }} · {{ payment.method.value.replace('_',' ')|title }}</p>
+              </div>
+            </div>
+            {{ tp.payment_status_badge(payment.status) }}
+          </div>
+          <div class="flex items-center justify-between mt-2 pl-12">
+            {% if payment.reference or payment.transaction_id %}
+            <p class="text-[11px] text-tp-muted">Ref: {{ payment.transaction_id or payment.reference }}</p>
+            {% else %}<span></span>{% endif %}
+            {% if receipt and receipt.pdf_url %}
+            <a href="/tenant/payments/{{ payment.id }}/receipt" class="text-[11px] font-semibold text-tp-primary">View Receipt</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
   </main>
 
   {% include "tenant/_bottom_nav.html" with context %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function tenantPay(config) {
+  return {
+    balance: config.balance,
+    tenantPhone: config.tenantPhone,
+    propertyName: config.propertyName,
+    unitNumber: config.unitNumber,
+    step: 'idle',
+    invoiceId: '',
+    amount: '',
+    phoneChoice: 'mine',
+    otherPhone: '',
+    sending: false,
+    error: '',
+    paymentId: null,
+    pollCount: 0,
+    pollTimer: null,
+    result: {},
+
+    init() {
+      if (this.balance > 0) this.amount = this.balance.toFixed(2);
+    },
+    fmt(v) {
+      const n = parseFloat(v || 0);
+      return 'KES ' + n.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    },
+    effectivePhone() {
+      return this.phoneChoice === 'mine' ? (this.tenantPhone || '') : this.otherPhone;
+    },
+    startFlow() {
+      this.error = '';
+      this.step = 'form';
+    },
+    goToConfirm() {
+      this.error = '';
+      if (!this.amount || parseFloat(this.amount) <= 0) { this.error = 'Enter a valid amount'; return; }
+      if (this.phoneChoice === 'mine' && !this.tenantPhone) { this.error = 'No phone number on file — use another number'; return; }
+      if (this.phoneChoice === 'other' && !this.otherPhone) { this.error = 'Enter the payment phone number'; return; }
+      this.step = 'confirm';
+    },
+    submitPayment() {
+      this.sending = true;
+      this.error = '';
+      fetch('/tenant/payments/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          invoice_id: this.invoiceId,
+          amount: this.amount,
+          phone_number: this.effectivePhone(),
+        }),
+      }).then(async (r) => {
+        const data = await r.json();
+        this.sending = false;
+        if (!r.ok) {
+          this.error = data.error || data.message || 'Payment could not be started';
+          this.paymentId = data.payment_id || null;
+          this.step = 'failed';
+          return;
+        }
+        this.paymentId = data.payment_id;
+        this.step = 'processing';
+        this.pollCount = 0;
+        this.pollStatus();
+      }).catch(() => {
+        this.sending = false;
+        this.error = 'Network error — try again';
+        this.step = 'failed';
+      });
+    },
+    pollStatus() {
+      if (!this.paymentId) return;
+      fetch('/tenant/payments/status/' + this.paymentId)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.status === 'successful') {
+            this.result = data;
+            this.step = 'success';
+            return;
+          }
+          if (data.status === 'failed') {
+            this.error = 'The M-Pesa payment was not completed.';
+            this.step = 'failed';
+            return;
+          }
+          this.pollCount += 1;
+          if (this.pollCount < 20) {
+            this.pollTimer = setTimeout(() => this.pollStatus(), 3000);
+          }
+        })
+        .catch(() => {
+          this.pollCount += 1;
+          if (this.pollCount < 20) {
+            this.pollTimer = setTimeout(() => this.pollStatus(), 3000);
+          }
+        });
+    },
+    finish() {
+      window.location.reload();
+    },
+    reset() {
+      clearTimeout(this.pollTimer);
+      this.step = 'idle';
+      this.invoiceId = '';
+      this.amount = this.balance > 0 ? this.balance.toFixed(2) : '';
+      this.phoneChoice = 'mine';
+      this.otherPhone = '';
+      this.error = '';
+      this.sending = false;
+      this.paymentId = null;
+    },
+  };
+}
+</script>
 {% endblock %}

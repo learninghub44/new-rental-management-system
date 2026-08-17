@@ -10,6 +10,10 @@
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
   <link rel="icon" href="/static/icons/icon-192.png" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
@@ -23,6 +27,13 @@
               50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6',
               600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a',
             },
+            /* Tenant portal fintech palette — scoped via the .tp (tenant portal) wrapper */
+            tp: {
+              bg: '#F8FAFC', surface: '#FFFFFF',
+              primary: '#4F46E5', primarydark: '#3730A3',
+              ink: '#0F172A', muted: '#64748B', border: '#E2E8F0',
+              success: '#16A34A', warning: '#D97706', danger: '#DC2626',
+            },
           },
         },
       },
@@ -31,6 +42,9 @@
   <style>
     [x-cloak] { display: none !important; }
     body { -webkit-tap-highlight-color: transparent; }
+    .tp { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    @keyframes tp-spin { to { transform: rotate(360deg); } }
+    .tp-spin { animation: tp-spin 0.8s linear infinite; }
   </style>
   {% block head %}{% endblock %}
 </head>

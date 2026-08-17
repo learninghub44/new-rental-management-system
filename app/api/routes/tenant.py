@@ -1,7 +1,9 @@
 import json
+import uuid
 
 from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
+
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -9,10 +11,11 @@ from app.core.deps import require_tenant
 from app.core.templating import templates
 from app.core.security import verify_password, hash_password
 from app.models.user import User
-from app.models.tenant import Tenant
-from app.models.billing import Invoice, LedgerEntry
-from app.models.payment import Payment
-from app.models.enums import InvoiceStatus, MaintenancePriority, ActivityAction
+from app.models.tenant import Tenant, Lease
+from app.models.property import Property, Unit
+from app.models.billing import Invoice
+from app.models.payment import Payment, Receipt
+from app.models.enums import InvoiceStatus, MaintenancePriority, ActivityAction, LeaseStatus
 from app.schemas.payment import STKPushRequest
 from app.schemas.maintenance import MaintenanceCreate
 from app.services.billing_service import list_invoices
@@ -32,13 +35,47 @@ def _current_tenant(db: Session, user: User) -> Tenant:
     return tenant
 
 
+def _active_lease(db: Session, tenant: Tenant) -> Lease | None:
+    lease = (
+        db.query(Lease)
+        .filter(Lease.tenant_id == tenant.id, Lease.status == LeaseStatus.ACTIVE)
+        .order_by(Lease.start_date.desc())
+        .first()
+    )
+    if not lease:
+        # Fall back to the most recent lease of any status so tenants between
+        # leases still see something rather than an empty section.
+        lease = db.query(Lease).filter(Lease.tenant_id == tenant.id).order_by(Lease.start_date.desc()).first()
+    return lease
+
+
 @router.get("/rent")
 def tenant_rent(request: Request, db: Session = Depends(get_db), user: User = Depends(require_tenant)):
     tenant = _current_tenant(db, user)
     balance = get_tenant_balance(db, tenant.id)
     invoices, _ = list_invoices(db, tenant_id=tenant.id, page=1, page_size=50)
+
+    lease = _active_lease(db, tenant)
+    unit = db.get(Unit, tenant.unit_id) if tenant.unit_id else (db.get(Unit, lease.unit_id) if lease else None)
+    property_ = db.get(Property, tenant.property_id) if tenant.property_id else (db.get(Property, unit.property_id) if unit else None)
+    manager = db.get(User, property_.manager_id) if property_ and property_.manager_id else None
+
+    next_invoice = (
+        db.query(Invoice)
+        .filter(
+            Invoice.tenant_id == tenant.id,
+            Invoice.status.in_([InvoiceStatus.GENERATED, InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.OVERDUE]),
+        )
+        .order_by(Invoice.due_date.asc())
+        .first()
+    )
+
     return templates.TemplateResponse(
-        "tenant/rent.html", {"request": request, "user": user, "tenant": tenant, "balance": balance, "invoices": invoices},
+        "tenant/rent.html",
+        {
+            "request": request, "user": user, "tenant": tenant, "balance": balance, "invoices": invoices,
+            "lease": lease, "unit": unit, "property": property_, "manager": manager, "next_invoice": next_invoice,
+        },
     )
 
 
@@ -53,9 +90,21 @@ def tenant_payments(request: Request, db: Session = Depends(get_db), user: User 
         .order_by(Invoice.due_date)
         .all()
     )
+    unit = db.get(Unit, tenant.unit_id) if tenant.unit_id else None
+    property_ = db.get(Property, tenant.property_id) if tenant.property_id else (db.get(Property, unit.property_id) if unit else None)
+
+    receipts_by_payment = {}
+    if payments:
+        receipts = db.query(Receipt).filter(Receipt.payment_id.in_([p.id for p in payments])).all()
+        receipts_by_payment = {r.payment_id: r for r in receipts}
+
     return templates.TemplateResponse(
         "tenant/payments.html",
-        {"request": request, "user": user, "tenant": tenant, "payments": payments, "balance": balance, "outstanding_invoices": outstanding_invoices},
+        {
+            "request": request, "user": user, "tenant": tenant, "payments": payments, "balance": balance,
+            "outstanding_invoices": outstanding_invoices, "unit": unit, "property": property_,
+            "receipts_by_payment": receipts_by_payment,
+        },
     )
 
 
@@ -75,14 +124,65 @@ def tenant_pay_submit(
 
     if txn.checkout_request_id:
         return JSONResponse(
-            {"status": "pending", "message": "Check your phone to complete the M-Pesa payment."},
+            {
+                "status": "pending",
+                "message": "Check your phone to complete the M-Pesa payment.",
+                "payment_id": str(txn.payment_id),
+            },
             headers={"HX-Trigger": json.dumps({"toast": {"type": "info", "message": "STK push sent — check your phone"}})},
         )
     return JSONResponse(
-        {"status": "failed", "message": txn.error_reason or "Could not start the payment"},
+        {"status": "failed", "message": txn.error_reason or "Could not start the payment", "payment_id": str(txn.payment_id)},
         status_code=502,
         headers={"HX-Trigger": json.dumps({"toast": {"type": "error", "message": "Payment could not be started"}})},
     )
+
+
+@router.get("/payments/status/{payment_id}")
+def tenant_pay_status(
+    request: Request, payment_id: str, db: Session = Depends(get_db), user: User = Depends(require_tenant),
+):
+    """Polled by the payment-processing screen so the tenant is never left wondering."""
+    tenant = _current_tenant(db, user)
+    try:
+        pid = uuid.UUID(payment_id)
+    except ValueError:
+        return JSONResponse({"error": "Invalid payment id"}, status_code=400)
+
+    payment = db.query(Payment).filter(Payment.id == pid, Payment.tenant_id == tenant.id).first()
+    if not payment:
+        return JSONResponse({"error": "Payment not found"}, status_code=404)
+
+    receipt = db.query(Receipt).filter(Receipt.payment_id == payment.id).first()
+    return JSONResponse({
+        "status": payment.status.value,
+        "amount": float(payment.amount),
+        "payment_date": payment.payment_date.isoformat(),
+        "method": payment.method.value,
+        "reference": payment.transaction_id or payment.reference,
+        "has_receipt": bool(receipt and receipt.pdf_url),
+    })
+
+
+@router.get("/payments/{payment_id}/receipt")
+def tenant_payment_receipt(
+    request: Request, payment_id: str, db: Session = Depends(get_db), user: User = Depends(require_tenant),
+):
+    tenant = _current_tenant(db, user)
+    try:
+        pid = uuid.UUID(payment_id)
+    except ValueError:
+        return templates.TemplateResponse("shared/error.html", {"request": request, "status_code": 404, "detail": "Receipt not found"}, status_code=404)
+
+    payment = db.query(Payment).filter(Payment.id == pid, Payment.tenant_id == tenant.id).first()
+    receipt = db.query(Receipt).filter(Receipt.payment_id == pid).first() if payment else None
+    if not payment or not receipt or not receipt.pdf_url:
+        return templates.TemplateResponse("shared/error.html", {"request": request, "status_code": 404, "detail": "Receipt not available"}, status_code=404)
+
+    if receipt.pdf_url.startswith("/static"):
+        file_path = "app/static" + receipt.pdf_url.split("/static", 1)[1]
+        return FileResponse(file_path, media_type="application/pdf", filename=f"{receipt.receipt_number}.pdf")
+    return RedirectResponse(url=receipt.pdf_url)
 
 
 @router.get("/maintenance")

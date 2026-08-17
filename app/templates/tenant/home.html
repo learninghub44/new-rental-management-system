@@ -1,34 +1,91 @@
 {% extends "shared/base.html" %}
+{% import "tenant/_macros.html" as tp %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<div class="pb-20 min-h-screen">
-  <header class="bg-brand-600 text-white px-6 pt-8 pb-6 rounded-b-3xl">
-    <p class="text-brand-100 text-sm">Welcome back</p>
-    <h1 class="text-2xl font-bold">{{ user.name }}</h1>
+<div class="tp pb-24 min-h-screen bg-tp-bg">
+
+  <header class="px-5 pt-7 pb-5">
+    <p class="text-tp-muted text-sm">Welcome back</p>
+    <h1 class="text-xl font-bold text-tp-ink mt-0.5">{{ user.name }}</h1>
   </header>
 
-  <main class="px-6 -mt-4 space-y-3">
-    <a href="/tenant/rent" class="block bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-      {% if balance > 0 %}
-        <p class="text-xs text-slate-400">Balance due</p>
-        <p class="text-2xl font-bold text-red-600 mt-1">KES {{ "{:,.2f}".format(balance) }}</p>
-      {% elif balance < 0 %}
-        <p class="text-xs text-slate-400">Credit on account</p>
-        <p class="text-2xl font-bold text-emerald-600 mt-1">KES {{ "{:,.2f}".format(-balance) }}</p>
-      {% else %}
-        <p class="text-xs text-slate-400">Balance</p>
-        <p class="text-2xl font-bold text-slate-800 mt-1">KES 0.00 — settled</p>
-      {% endif %}
-      <p class="text-xs text-brand-600 mt-2 font-medium">View invoices →</p>
+  <main class="px-5 space-y-4">
+
+    {% set monthly_rent = tenant.monthly_rent or 0 %}
+    {{ tp.rent_status_card(balance, next_invoice, monthly_rent) }}
+
+    <a href="/tenant/payments" class="flex items-center justify-center gap-2 w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl shadow-sm">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+      Pay Rent
     </a>
 
-    {% if recent_payment %}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-      <p class="text-xs text-slate-400">Last payment</p>
-      <p class="text-lg font-semibold text-slate-800 mt-1">KES {{ "{:,.2f}".format(recent_payment.amount) }}</p>
-      <p class="text-xs text-slate-400 mt-1">{{ recent_payment.payment_date.strftime('%d %b %Y') }} · {{ recent_payment.method.value.replace('_',' ')|title }}</p>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-2xl bg-white border border-tp-border p-4">
+        <p class="text-xs text-tp-muted">Paid this month</p>
+        <p class="text-lg font-bold text-tp-ink mt-1 tabular-nums">{{ tp.money(paid_this_month) }}</p>
+      </div>
+      <div class="rounded-2xl bg-white border border-tp-border p-4">
+        <p class="text-xs text-tp-muted">Paid this year</p>
+        <p class="text-lg font-bold text-tp-ink mt-1 tabular-nums">{{ tp.money(paid_this_year) }}</p>
+      </div>
+    </div>
+
+    {% if overdue_amount and overdue_amount > 0 %}
+    <div class="rounded-2xl bg-red-50 border border-red-100 p-4 flex items-center justify-between">
+      <div>
+        <p class="text-xs text-tp-danger font-medium">Overdue amount</p>
+        <p class="text-lg font-bold text-tp-danger mt-0.5 tabular-nums">{{ tp.money(overdue_amount) }}</p>
+      </div>
+      <a href="/tenant/payments" class="text-xs font-semibold text-white bg-tp-danger px-3 py-2 rounded-xl">Pay now</a>
     </div>
     {% endif %}
+
+    <div class="rounded-2xl bg-white border border-tp-border p-4 flex items-center justify-between">
+      <div>
+        <p class="text-xs text-tp-muted">Next payment</p>
+        <p class="text-sm font-semibold text-tp-ink mt-0.5">
+          {% if next_invoice %}{{ next_invoice.due_date.strftime('%d %B %Y') }}{% else %}Nothing scheduled{% endif %}
+        </p>
+      </div>
+      <a href="/tenant/rent" class="text-xs font-medium text-tp-primary">View invoices →</a>
+    </div>
+
+    {% if recent_payment %}
+    <div class="rounded-2xl bg-white border border-tp-border p-4">
+      <p class="text-xs text-tp-muted mb-2">Last payment</p>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-success" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-tp-ink tabular-nums">{{ tp.money(recent_payment.amount) }}</p>
+            <p class="text-xs text-tp-muted">{{ recent_payment.payment_date.strftime('%d %b %Y') }} · {{ recent_payment.method.value.replace('_',' ')|title }}</p>
+          </div>
+        </div>
+        <a href="/tenant/payments" class="text-xs font-medium text-tp-primary">History →</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <div>
+      <h2 class="text-xs font-semibold text-tp-muted px-1 pt-1 pb-2 uppercase tracking-wide">Quick actions</h2>
+      <div class="grid grid-cols-3 gap-3">
+        <a href="/tenant/rent" class="rounded-2xl bg-white border border-tp-border p-3.5 flex flex-col items-center gap-1.5 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-primary" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h4" /></svg>
+          <span class="text-[11px] font-medium text-tp-ink">My Rental</span>
+        </a>
+        <a href="/tenant/maintenance/new" class="rounded-2xl bg-white border border-tp-border p-3.5 flex flex-col items-center gap-1.5 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-primary" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a3 3 0 0 0-4.2 4.2L4 17v3h3l6.5-6.5a3 3 0 0 0 4.2-4.2l-2.1 2.1-2-2 2.1-2.1Z" /></svg>
+          <span class="text-[11px] font-medium text-tp-ink">Report Issue</span>
+        </a>
+        <a href="/tenant/profile" class="rounded-2xl bg-white border border-tp-border p-3.5 flex flex-col items-center gap-1.5 text-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-tp-primary" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>
+          <span class="text-[11px] font-medium text-tp-ink">Profile</span>
+        </a>
+      </div>
+    </div>
+
   </main>
 
   {% include "tenant/_bottom_nav.html" with context %}

@@ -1,33 +1,37 @@
 {% extends "shared/base.html" %}
 {% block title %}New Request{% endblock %}
 {% block content %}
-<div class="pb-24 min-h-screen">
-  <header class="bg-slate-900 text-white px-6 pt-8 pb-6 rounded-b-3xl">
-    <h1 class="text-xl font-bold">New Maintenance Request</h1>
+<div class="tp pb-24 min-h-screen bg-tp-bg">
+
+  <header class="px-5 pt-7 pb-4">
+    <h1 class="text-xl font-bold text-tp-ink">New Maintenance Request</h1>
+    <p class="text-tp-muted text-sm mt-0.5">Tell us what needs attention</p>
   </header>
 
-  <main class="px-4 -mt-2">
-    <form method="post" action="/tenant/maintenance/new" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4 mt-4">
-      {% if error %}<p class="text-sm text-red-600 bg-red-50 rounded-lg p-3">{{ error }}</p>{% endif %}
+  <main class="px-5">
+    <form method="post" action="/tenant/maintenance/new" class="rounded-2xl bg-white border border-tp-border p-5 space-y-4">
+      {% if error %}<p class="text-sm text-tp-danger bg-red-50 rounded-xl p-3">{{ error }}</p>{% endif %}
 
       <div>
-        <label class="text-xs text-slate-500">Title</label>
-        <input name="title" required maxlength="200" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+        <label class="text-xs text-tp-muted font-medium">Title</label>
+        <input name="title" required maxlength="200" placeholder="e.g. Leaking kitchen tap"
+               class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm" />
       </div>
       <div>
-        <label class="text-xs text-slate-500">Description</label>
-        <textarea name="description" required rows="4" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"></textarea>
+        <label class="text-xs text-tp-muted font-medium">Description</label>
+        <textarea name="description" required rows="4" placeholder="Give a few details so we can act quickly"
+                  class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm"></textarea>
       </div>
       <div>
-        <label class="text-xs text-slate-500">Priority</label>
-        <select name="priority" class="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+        <label class="text-xs text-tp-muted font-medium">Priority</label>
+        <select name="priority" class="w-full mt-1.5 rounded-xl border border-tp-border px-3 py-2.5 text-sm bg-white">
           {% for p in priorities %}
           <option value="{{ p.value }}" {% if p.value == 'medium' %}selected{% endif %}>{{ p.value|title }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <button type="submit" class="w-full bg-brand-600 text-white font-semibold py-3 rounded-xl">Submit Request</button>
+      <button type="submit" class="w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl">Submit Request</button>
     </form>
   </main>
 

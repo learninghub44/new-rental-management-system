@@ -1,0 +1,95 @@
+{# Shared tenant-portal display helpers. Import with: {% import "tenant/_macros.html" as tp %} #}
+
+{% macro money(v) -%}
+KES {{ "{:,.2f}".format(v) }}
+{%- endmacro %}
+
+{#
+  Rent status card — the tenant's single most important question answered
+  in one glance: "have I paid, and if not, how much / by when."
+  balance: Decimal, positive = tenant owes money, negative = credit, 0 = settled
+  next_invoice: earliest outstanding Invoice or None
+  monthly_rent: fallback rent figure when there is no invoice on file yet
+#}
+{% macro rent_status_card(balance, next_invoice, monthly_rent) %}
+  {% set total = next_invoice.total_amount if next_invoice else monthly_rent %}
+  {% set paid = (total - next_invoice.balance) if next_invoice else (total if balance <= 0 else (total - balance)) %}
+  {% set pct = ((paid / total) * 100) if total and total > 0 else 100 %}
+  {% set pct = 100 if pct > 100 else (0 if pct < 0 else pct) %}
+
+  {% if balance <= 0 %}
+    <div class="rounded-2xl bg-white border border-tp-border p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-tp-success bg-green-50 px-2.5 py-1 rounded-full">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          Paid
+        </span>
+        {% if balance < 0 %}<span class="text-xs font-medium text-tp-success">Credit on account</span>{% endif %}
+      </div>
+      {% if balance < 0 %}
+        <p class="text-2xl font-bold text-tp-ink tabular-nums">{{ money(-balance) }}</p>
+        <p class="text-xs text-tp-muted mt-1">Credit balance carried to your next invoice</p>
+      {% else %}
+        <p class="text-2xl font-bold text-tp-ink tabular-nums">{{ money(total) }} <span class="text-tp-muted font-medium text-base">/ {{ money(total) }}</span></p>
+        <div class="h-2 rounded-full bg-slate-100 mt-3 overflow-hidden"><div class="h-full bg-tp-success rounded-full" style="width:100%"></div></div>
+        <p class="text-xs text-tp-success font-medium mt-2">100% Paid — you're all settled up</p>
+      {% endif %}
+    </div>
+  {% elif paid > 0 %}
+    <div class="rounded-2xl bg-white border border-tp-border p-5">
+      <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-tp-warning bg-amber-50 px-2.5 py-1 rounded-full mb-3">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
+        Partially Paid
+      </span>
+      <p class="text-2xl font-bold text-tp-ink tabular-nums">{{ money(paid) }} <span class="text-tp-muted font-medium text-base">/ {{ money(total) }}</span></p>
+      <div class="h-2 rounded-full bg-slate-100 mt-3 overflow-hidden"><div class="h-full bg-tp-warning rounded-full" style="width:{{ pct }}%"></div></div>
+      <p class="text-xs text-tp-warning font-medium mt-2">{{ money(balance) }} remaining{% if next_invoice %} · due {{ next_invoice.due_date.strftime('%d %b %Y') }}{% endif %}</p>
+    </div>
+  {% else %}
+    <div class="rounded-2xl bg-white border border-tp-border p-5">
+      <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-tp-danger bg-red-50 px-2.5 py-1 rounded-full mb-3">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 8v5M12 16.5h.01" /><circle cx="12" cy="12" r="9" /></svg>
+        {% if next_invoice and next_invoice.status.value == 'overdue' %}Overdue{% else %}Payment Due{% endif %}
+      </span>
+      <p class="text-2xl font-bold text-tp-ink tabular-nums">{{ money(balance) }}</p>
+      <p class="text-xs {{ 'text-tp-danger' if (next_invoice and next_invoice.status.value == 'overdue') else 'text-tp-muted' }} font-medium mt-2">
+        {% if next_invoice %}Due {{ next_invoice.due_date.strftime('%d %B') }}{% else %}No due date on file{% endif %}
+      </p>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro invoice_status_badge(status) %}
+  {% set s = status.value %}
+  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+    {% if s == 'paid' %} bg-green-50 text-tp-success
+    {% elif s == 'overdue' %} bg-red-50 text-tp-danger
+    {% elif s == 'partially_paid' %} bg-amber-50 text-tp-warning
+    {% elif s == 'cancelled' %} bg-slate-100 text-tp-muted
+    {% else %} bg-indigo-50 text-tp-primary {% endif %}">
+    {{ s.replace('_', ' ')|title }}
+  </span>
+{% endmacro %}
+
+{% macro payment_status_badge(status) %}
+  {% set s = status.value %}
+  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+    {% if s == 'successful' %} bg-green-50 text-tp-success
+    {% elif s == 'pending' %} bg-amber-50 text-tp-warning
+    {% elif s == 'failed' %} bg-red-50 text-tp-danger
+    {% else %} bg-slate-100 text-tp-muted {% endif %}">
+    {{ s|title }}
+  </span>
+{% endmacro %}
+
+{% macro maintenance_status_badge(status) %}
+  {% set s = status.value %}
+  {% set label = {'submitted': 'Submitted', 'approved': 'In Review', 'assigned': 'In Review', 'in_progress': 'In Progress', 'completed': 'Resolved', 'closed': 'Resolved'}.get(s, s|title) %}
+  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full
+    {% if s in ['completed', 'closed'] %} bg-green-50 text-tp-success
+    {% elif s == 'submitted' %} bg-indigo-50 text-tp-primary
+    {% elif s == 'in_progress' %} bg-amber-50 text-tp-warning
+    {% else %} bg-slate-100 text-tp-muted {% endif %}">
+    {{ label }}
+  </span>
+{% endmacro %}
