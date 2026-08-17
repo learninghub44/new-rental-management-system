@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
@@ -35,7 +36,7 @@ def tenant_home(request: Request, db: Session = Depends(get_db), user: User = De
     total_paid = Decimal("0")
     overdue_amount = Decimal("0")
 
-    hour = datetime.now().hour
+    hour = datetime.now(ZoneInfo("Africa/Nairobi")).hour
     greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
     first_name = (user.name or "").split(" ")[0] if user.name else ""
 

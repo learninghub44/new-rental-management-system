@@ -7,6 +7,7 @@
 <div class="tp pb-24 min-h-screen bg-tp-bg"
      x-data="tenantPay({
        balance: {{ balance }},
+       monthlyRent: {{ tenant.monthly_rent or 0 }},
        tenantPhone: {{ (tenant.phone or '')|tojson }},
        propertyName: {{ (property.name if property else '')|tojson }},
        unitNumber: {{ (unit.unit_number if unit else '')|tojson }},
@@ -228,6 +229,7 @@
 function tenantPay(config) {
   return {
     balance: config.balance,
+    monthlyRent: config.monthlyRent || 0,
     tenantPhone: config.tenantPhone,
     propertyName: config.propertyName,
     unitNumber: config.unitNumber,
@@ -244,8 +246,11 @@ function tenantPay(config) {
     pollTimer: null,
     result: {},
 
+    defaultAmount() {
+      return this.balance > 0 ? this.balance.toFixed(2) : (this.monthlyRent > 0 ? this.monthlyRent.toFixed(2) : '');
+    },
     init() {
-      if (this.balance > 0) this.amount = this.balance.toFixed(2);
+      this.amount = this.defaultAmount();
       if (this.autoStart) {
         this.startFlow();
         window.history.replaceState({}, '', window.location.pathname);
@@ -333,7 +338,7 @@ function tenantPay(config) {
       clearTimeout(this.pollTimer);
       this.step = 'idle';
       this.invoiceId = '';
-      this.amount = this.balance > 0 ? this.balance.toFixed(2) : '';
+      this.amount = this.defaultAmount();
       this.phoneChoice = 'mine';
       this.otherPhone = '';
       this.error = '';
