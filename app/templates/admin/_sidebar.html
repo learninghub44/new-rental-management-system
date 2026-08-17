@@ -1,0 +1,46 @@
+{% set path = request.url.path %}
+{% macro nav_item(href, label, icon, active) -%}
+<a href="{{ href }}"
+   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
+          {{ 'bg-brand-600 text-white' if active else 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+  <img src="https://img.icons8.com/ios{{ '-filled' if active else '' }}/20/{{ 'ffffff' if active else '94a3b8' }}/{{ icon }}.png" alt="" class="w-5 h-5 shrink-0" />
+  <span>{{ label }}</span>
+</a>
+{%- endmacro %}
+
+<aside class="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-64 bg-slate-900 border-r border-slate-800 z-40">
+  <div class="px-5 pt-6 pb-5 border-b border-slate-800">
+    <p class="text-white font-bold text-lg leading-tight">Rental Mgmt</p>
+    <p class="text-slate-500 text-xs mt-0.5">Admin console</p>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+    {{ nav_item('/admin/dashboard', 'Dashboard', 'dashboard', path == '/admin/dashboard') }}
+    {{ nav_item('/admin/properties', 'Properties', 'company', path.startswith('/admin/properties')) }}
+    {{ nav_item('/admin/tenants', 'Tenants', 'user-group-man-man', path.startswith('/admin/tenants')) }}
+    {{ nav_item('/admin/invoices', 'Invoices', 'invoice', path.startswith('/admin/invoices')) }}
+    {{ nav_item('/admin/payments', 'Payments', 'mobile-payment', path.startswith('/admin/payments')) }}
+    {{ nav_item('/admin/maintenance', 'Maintenance', 'maintenance', path.startswith('/admin/maintenance')) }}
+    {{ nav_item('/admin/expenses', 'Expenses', 'expensive', path.startswith('/admin/expenses')) }}
+    {{ nav_item('/admin/reports', 'Reports', 'combo-chart', path.startswith('/admin/reports')) }}
+
+    <div class="pt-3 mt-3 border-t border-slate-800 space-y-1">
+      {{ nav_item('/admin/users', 'Users', 'user-group-man-man', path.startswith('/admin/users')) }}
+      {% if user.role.value == 'admin' %}
+      {{ nav_item('/admin/developer', 'Developer', 'source-code', path.startswith('/admin/developer')) }}
+      {% endif %}
+    </div>
+  </nav>
+
+  <div class="px-3 pb-4 pt-3 border-t border-slate-800">
+    <div class="px-2 pb-3">
+      <p class="text-white text-sm font-semibold truncate">{{ user.name }}</p>
+      <p class="text-slate-500 text-xs capitalize">{{ user.role.value }}</p>
+    </div>
+    <form method="post" action="/logout">
+      <button type="submit" class="w-full text-left text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-xl px-3 py-2 transition-colors">
+        Log out
+      </button>
+    </form>
+  </div>
+</aside>

@@ -39,7 +39,13 @@
   <div id="toast-root" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[92%] max-w-sm"
        hx-swap-oob="true"></div>
 
-  {% block content %}{% endblock %}
+  {% if user is defined and request.url.path.startswith('/admin') %}
+    {% include "admin/_sidebar.html" with context %}
+  {% endif %}
+
+  <div class="{{ 'md:pl-64' if (user is defined and request.url.path.startswith('/admin')) else '' }}">
+    {% block content %}{% endblock %}
+  </div>
 
   <script>
     // Global HTMX toast handler: server sends HX-Trigger: {"toast": {"type": "success", "message": "..."}}
