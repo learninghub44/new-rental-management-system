@@ -12,7 +12,18 @@
   <main class="px-5 space-y-5">
 
     {% set monthly_rent = tenant.monthly_rent or (lease.rent_amount if lease else 0) %}
+    {% set deposit_amt = tenant.deposit if tenant.deposit else (lease.deposit if lease else 0) %}
+    {% set total_invoiced = invoices|sum(attribute='total_amount') if invoices else 0 %}
+    {% set total_invoice_paid = invoices|sum(attribute='paid_amount') if invoices else 0 %}
+
     {{ tp.rent_status_card(balance, next_invoice, monthly_rent) }}
+
+    <div class="grid grid-cols-2 gap-3">
+      {{ tp.metric_card("Monthly Rent", tp.money(monthly_rent), "rent") }}
+      {{ tp.metric_card("Deposit", tp.money(deposit_amt), "next") if deposit_amt else tp.metric_card("Total Invoiced", tp.money(total_invoiced), "next") }}
+      {{ tp.metric_card("Total Paid", tp.money(total_invoice_paid), "success", "Across all invoices") }}
+      {{ tp.metric_card("Total Invoiced", tp.money(total_invoiced), "year") if deposit_amt else tp.metric_card("Occupancy", (lease.status.value|title if lease else "—"), "year") }}
+    </div>
 
     <a href="/tenant/payments?start=1" class="flex items-center justify-center gap-2 w-full bg-tp-primary hover:bg-tp-primarydark active:scale-[0.99] transition-all text-white font-semibold py-3.5 rounded-2xl shadow-sm">
       Make a Payment
@@ -23,44 +34,52 @@
       {% if property or unit or lease %}
       <div class="rounded-2xl bg-white border border-tp-border divide-y divide-tp-border overflow-hidden">
         {% if property %}
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Property</span>
+        <div class="flex items-center gap-3 px-4 py-3">
+          <div class="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M14 9h1M14 13h1" /></svg>
+          </div>
+          <span class="text-sm text-tp-muted flex-1">Property</span>
           <span class="text-sm font-semibold text-tp-ink text-right">{{ property.name }}</span>
         </div>
         {% endif %}
         {% if unit %}
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Unit</span>
+        <div class="flex items-center gap-3 px-4 py-3">
+          <div class="w-8 h-8 rounded-full bg-[#F5F3FF] flex items-center justify-center shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>
+          </div>
+          <span class="text-sm text-tp-muted flex-1">Unit</span>
           <span class="text-sm font-semibold text-tp-ink">{{ unit.unit_number }}{% if unit.floor %} · Floor {{ unit.floor }}{% endif %}</span>
         </div>
         {% endif %}
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Monthly rent</span>
-          <span class="text-sm font-semibold text-tp-ink tabular-nums">{{ tp.money(monthly_rent) }}</span>
-        </div>
-        {% if tenant.deposit or (lease and lease.deposit) %}
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Deposit</span>
-          <span class="text-sm font-semibold text-tp-ink tabular-nums">{{ tp.money(tenant.deposit if tenant.deposit else lease.deposit) }}</span>
-        </div>
-        {% endif %}
         {% if lease %}
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Lease start</span>
+        <div class="flex items-center gap-3 px-4 py-3">
+          <div class="w-8 h-8 rounded-full bg-[#ECFDF5] flex items-center justify-center shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+          </div>
+          <span class="text-sm text-tp-muted flex-1">Lease start</span>
           <span class="text-sm font-semibold text-tp-ink">{{ lease.start_date.strftime('%d %b %Y') }}</span>
         </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Lease end</span>
+        <div class="flex items-center gap-3 px-4 py-3">
+          <div class="w-8 h-8 rounded-full bg-[#ECFDF5] flex items-center justify-center shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+          </div>
+          <span class="text-sm text-tp-muted flex-1">Lease end</span>
           <span class="text-sm font-semibold text-tp-ink">{{ lease.end_date.strftime('%d %b %Y') if lease.end_date else 'Open-ended' }}</span>
         </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Occupancy status</span>
+        <div class="flex items-center gap-3 px-4 py-3">
+          <div class="w-8 h-8 rounded-full {{ 'bg-[#ECFDF5]' if lease.status.value == 'active' else 'bg-slate-100' }} flex items-center justify-center shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ '#10B981' if lease.status.value == 'active' else '#64748B' }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M9 12.5 11 15l4-5" /></svg>
+          </div>
+          <span class="text-sm text-tp-muted flex-1">Occupancy status</span>
           <span class="text-sm font-semibold {{ 'text-tp-success' if lease.status.value == 'active' else 'text-tp-muted' }}">{{ lease.status.value|title }}</span>
         </div>
         {% endif %}
         {% if manager %}
-        <div class="flex items-center justify-between px-4 py-3">
-          <span class="text-sm text-tp-muted">Property manager</span>
+        <div class="flex items-center gap-3 px-4 py-3">
+          <div class="w-8 h-8 rounded-full bg-[#F5F3FF] flex items-center justify-center shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>
+          </div>
+          <span class="text-sm text-tp-muted flex-1">Property manager</span>
           <span class="text-sm font-semibold text-tp-ink text-right">{{ manager.name }}{% if manager.phone %}<br><span class="font-normal text-tp-muted">{{ manager.phone }}</span>{% endif %}</span>
         </div>
         {% endif %}
