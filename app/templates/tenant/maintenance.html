@@ -13,6 +13,16 @@
   </header>
 
   <main class="px-5 space-y-3">
+    {% if requests %}
+    {% set open_count = requests|selectattr('status.value', 'in', ['submitted', 'approved', 'assigned'])|list|length %}
+    {% set progress_count = requests|selectattr('status.value', 'equalto', 'in_progress')|list|length %}
+    {% set resolved_count = requests|selectattr('status.value', 'in', ['completed', 'closed'])|list|length %}
+    <div class="grid grid-cols-3 gap-2.5 mb-1">
+      {{ tp.metric_card("Open", open_count, "rent") }}
+      {{ tp.metric_card("In Progress", progress_count, "balance") }}
+      {{ tp.metric_card("Resolved", resolved_count, "success") }}
+    </div>
+    {% endif %}
     {% if not requests %}
       <div class="rounded-2xl bg-white border border-tp-border p-8 text-center">
         <div class="w-12 h-12 mx-auto rounded-full bg-indigo-50 flex items-center justify-center">
