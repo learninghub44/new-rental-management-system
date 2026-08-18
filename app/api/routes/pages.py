@@ -12,7 +12,9 @@ from app.models.user import User
 from app.models.tenant import Tenant
 from app.models.payment import Payment
 from app.models.billing import Invoice
-from app.models.enums import PaymentStatus, InvoiceStatus
+from app.models.property import Property, Unit
+from app.models.maintenance import MaintenanceRequest
+from app.models.enums import PaymentStatus, InvoiceStatus, UnitStatus, MaintenanceStatus
 
 router = APIRouter(tags=["pages"])
 
@@ -93,8 +95,57 @@ def tenant_home(request: Request, db: Session = Depends(get_db), user: User = De
 
 
 @router.get("/admin/dashboard")
-def admin_dashboard(request: Request, user: User = Depends(require_staff)):
-    return templates.TemplateResponse("admin/dashboard.html", {"request": request, "user": user})
+def admin_dashboard(request: Request, db: Session = Depends(get_db), user: User = Depends(require_staff)):
+    today = date.today()
+
+    total_units = db.query(Unit).count()
+    occupied_units = db.query(Unit).filter(Unit.status == UnitStatus.OCCUPIED).count()
+    vacant_units = db.query(Unit).filter(Unit.status == UnitStatus.AVAILABLE).count()
+    reserved_units = db.query(Unit).filter(Unit.status == UnitStatus.RESERVED).count()
+    total_properties = db.query(Property).count()
+
+    collected_this_month = Decimal("0")
+    for p in db.query(Payment).filter(Payment.status == PaymentStatus.SUCCESSFUL):
+        if p.payment_date.year == today.year and p.payment_date.month == today.month:
+            collected_this_month += p.amount
+
+    outstanding_invoices = db.query(Invoice).filter(
+        Invoice.status.in_([InvoiceStatus.GENERATED, InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.OVERDUE])
+    ).all()
+    total_outstanding = sum((inv.balance for inv in outstanding_invoices), Decimal("0"))
+    overdue_count = db.query(Invoice).filter(Invoice.status == InvoiceStatus.OVERDUE).count()
+
+    open_maintenance = db.query(MaintenanceRequest).filter(
+        MaintenanceRequest.status.in_([
+            MaintenanceStatus.SUBMITTED, MaintenanceStatus.APPROVED,
+            MaintenanceStatus.ASSIGNED, MaintenanceStatus.IN_PROGRESS,
+        ])
+    ).count()
+
+    recent_payments = (
+        db.query(Payment)
+        .filter(Payment.status == PaymentStatus.SUCCESSFUL)
+        .order_by(Payment.payment_date.desc())
+        .limit(5)
+        .all()
+    )
+
+    hour = datetime.now(ZoneInfo("Africa/Nairobi")).hour
+    greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
+    first_name = (user.name or "").split(" ")[0] if user.name else ""
+
+    return templates.TemplateResponse(
+        "admin/dashboard.html",
+        {
+            "request": request, "user": user, "greeting": greeting, "first_name": first_name,
+            "total_units": total_units, "occupied_units": occupied_units,
+            "vacant_units": vacant_units, "reserved_units": reserved_units,
+            "total_properties": total_properties,
+            "collected_this_month": collected_this_month,
+            "total_outstanding": total_outstanding, "overdue_count": overdue_count,
+            "open_maintenance": open_maintenance, "recent_payments": recent_payments,
+        },
+    )
 
 
 @router.get("/admin/more")
